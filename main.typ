@@ -21,17 +21,23 @@
 = Introduction
 
 #quote(attribution: [Ferrari])[
-  Instead of considering a finite total order, one can consider either an infinite (but discrete) total order or a more general partial order. In the former case, the combinatorial structure that is involved could be some notion of infinite Dyck path, that is, a Dyck path having infinite length. There are at least two different ways to formalize this suggestion: either working in the set of all Dyck paths (of any length), which is naturally partially ordered, and can be probably interpreted as some kind of infinitary limit object for the family of Dyck lattices; or introducing Dyck paths having infinite support, i.e., Dyck paths unbounded on the right which do not have a suffix consisting of the concatenation of an infinite number of peaks lying on the x-axis.
+  Instead of considering a finite total order, one can consider either an infinite (but discrete) total order or a more general partial order.
+  In the former case, the combinatorial structure that is involved could be some notion of infinite Dyck path, that is, a Dyck path having infinite length.
+  There are at least two different ways to formalize this suggestion: either working in the *set of all Dyck paths* (of any length), which is naturally partially ordered, and can be probably interpreted as some kind of infinitary limit object for the family of Dyck lattices;
+  or introducing *Dyck paths having infinite support*, i.e., Dyck paths unbounded on the right which do not have a suffix consisting of the concatenation of an infinite number of peaks lying on the x-axis.
 ]
 
-Both formalisations live inside the same picture. Read an infinite word over
-$\{u, d\}$ as a lattice path and compare it to the bottom element
-$bot = (u d)^omega$, the infinite concatenation of peaks lying on the axis: the
-two models are exactly the two ways a path can behave against $bot$ in the long
+Therefore, we denote:
+
+- *Model 1:* the set of all Dyck paths;
+- *Model 2:* the set of Dyck paths with infinite support.
+
+Both models live inside the same picture. Read an infinite word over $Sigma = \{u, d\}^omega$ as a lattice path and compare it to the bottom element
+$bot = (u d)^omega$, the infinite concatenation of peaks lying on the axis: the two models are exactly the two ways a path can behave against $bot$ in the long
 run.
 
 #let bot-word = "ud" * 8
-#let P-fin = "uuuddd" + "ud" * 4 + "u"
+#let P-fin = "uuuddd" + "ud" * 4 + "ud"
 #let P-inf = "uudd" + "uuuddd" + "uuuudd"
 
 #figure(
@@ -44,103 +50,121 @@ run.
     dyck-diagram(n: 16, height: 4, unit: 0.42cm, x-ticks: 4, x-label: [$n$], y-label: [$h$], {
       dyck-path(bot-word, color: cmute, offset: -0.08)
       dyck-path(P-fin, color: cI, fill: auto, dots: true)
-      dyck-annotate(P-fin, 3, [$supp(P)$], color: cI, dir: (-0.5, 1.0), anchor: "south")
     }),
     dyck-diagram(n: 16, height: 4, unit: 0.42cm, x-ticks: 4, x-label: [$n$], y-label: [$h$], {
       dyck-path(bot-word, color: cmute, offset: -0.08)
       dyck-path(P-inf, color: cII, fill: auto, dots: true)
-      dyck-annotate(
-        P-inf,
-        8,
-        [$supp(P)$ unbounded],
-        color: cII,
-        dir: (-3.0, 2.0),
-        anchor: "west",
-        leader: false,
-        dot: false,
-      )
     }),
-
-    text(0.92em)[Model 1: $P (u d)^omega$, $abs(supp(P)) < infinity$], text(0.92em)[Model 2: $abs(supp(P)) = infinity$],
-  ),
-  caption: [
-    The two shapes of infinite Dyck path, drawn against $bot = (u d)^omega$ (grey).
-    On the left the path merges with $bot$ and stays there, so it is a finite Dyck
-    path padded with peaks; on the right its excursions above $bot$ never stop.
-  ],
+  )
 ) <fig:two-models>
 
-= Model 1 and 2
+= Formalising Model 1 and 2
 
-== Setup  // (1) define the ambient object once, before both models
+== Ambient definitions
+
+For a path $P = p_0 p_1 p_2 dots$, we define the function $h_P (n)$ that returns the height of $P$ after its first $n$ steps.
 
 $
-  h_P (0) = 0,
-  wide
-  h_P (n)
-  =
-  \#{i < n : p_i = u}
-  -
-  \#{i < n : p_i = d}.
+  h_P (0) = 0, wide h_P (n) = \#{i < n | p_i = u} - \#{i < n | p_i = d}.
 $
 
 $
-  cal(D)_omega
-  =
-  lr(
-    \{
-    P = p_0 p_1 p_2 dots.c in \{u, d\}^omega
-    mid(|)
-    forall n in NN, h_P (n) >= 0
-    \}
-  ).
+  cal(D)_omega = \{ P = (p_i)_(i in NN) in \{u, d\}^omega mid(|) forall n in NN, h_P (n) >= 0 \}
 $
 
 $
-  P <= Q
-  quad arrow.l.r.double quad
-  forall n in NN,
-  h_P (n) <= h_Q (n).
+  P <= Q quad arrow.l.r.double quad forall n in NN, h_P (n) <= h_Q (n).
 $
 
 $
-  bot = (u d)^omega,
-  wide
-  h_bot (n)
-  =
+  bot = (u d)^omega, wide h_bot (n) =
   cases(
     0 & "if " n = 0 mod 2,
     1 & "if " n = 1 mod 2,
   ).
 $
 
+We import the local vocabulary of @Ferrari2015DyckAI, transposed to infinite
+words. A _return_ of $P$ is an index $n > 0$ with $h_P (n) = 0$; a _peak_ is a
+pair of consecutive steps $p_n p_(n+1) = u d$, and a _hill_ is a peak at height
+$0$, i.e. one with $h_P (n) = 0$. A _pyramid_ is a block $u^k d^k$ ($k >= 1$)
+starting and ending on the axis, so a hill is the pyramid with $k = 1$. Finally,
+a _factor_ of $P$ is a block of consecutive steps running between two
+consecutive returns (or from the origin to the first return); a hill is also
+called a _trivial factor_. In the finite case every Dyck path is the
+juxtaposition of its factors; here the same holds for the prefix of $P$ up to
+its last return, and a path with infinitely many returns is the juxtaposition of
+infinitely many factors. In this language $bot = (u d)^omega$ is the unique path
+all of whose factors are hills, and the atom $pi_i$ introduced below is the path
+whose factors are all hills except for a single pyramid $u u d d$.
+
 // (2) two variants of supp, with the translation between them
 
+The _support_ of a path measures how far it strays from the floor $bot$: it
+collects the times at which $P$ does not sit exactly where $bot$ does. Since
+$bot$ is nothing but hills, this amounts to recording where $P$ does something
+other than a hill: a path of finite support is one whose factors are hills from
+some point on — a finite Dyck path followed by an infinite run of hills —
+whereas a path of infinite support keeps producing nontrivial factors
+arbitrarily late. This is precisely the line separating Model 1 from Model 2.
+
 $
-  supp(P)
-  =
-  \{ n in NN mid(|) h_P (n) != h_bot (n) \},
-  wide
-  supp_"at" (P)
-  =
-  \{ i >= 1 mid(|) h_P (2i) > 0 \}.
+  supp(P) = \{ n in NN mid(|) h_P (n) != h_bot (n) \}, wide supp_"at" (P) = \{ i >= 1 mid(|) h_P (2i) > 0 \}.
 $
+
+The second variant samples only the even times, and there $bot$ is on the axis:
+since paths never go below $0$, "differing from $bot$" and "being strictly
+above the axis" say the same thing. The next lemma shows that this sampling
+loses nothing, so we may use whichever variant is convenient.
 
 #lemma[
   $supp_"at" (P) = \{ i mid(|) 2i in supp(P) \}$, and
   $abs(supp(P)) < infinity <=> abs(supp_"at" (P)) < infinity$.
 ]
 #proof[
-  If $h_P (2i) = 0$ for all $i >= m$, then each excursion between
-  consecutive returns at distance $2$ is a hill, so $h_P (2i+1) = 1
-  = h_bot (2i+1)$ there as well; hence finiteness of $supp_"at"$
-  gives finiteness of $supp$. The converse is immediate.
+  The first identity is immediate from $h_bot (2i) = 0$ and $h_P >= 0$.
+  For the second, suppose $h_P (2i) = 0$ for all $i >= m$. Between two
+  consecutive even times at height $0$ there are exactly two steps, and
+  nonnegativity forces them to be $u$ then $d$ --- a hill --- so
+  $h_P (2i+1) = 1 = h_bot (2i+1)$ there as well. Hence $supp(P) subset.eq
+  [0, 2m]$ is finite. The converse follows from the first identity, which
+  embeds $supp_"at" (P)$ into $supp(P)$ via $i |-> 2i$.
 ]
 
 // (2') the reason to keep supp_at: it is the atom spectrum
 #lemma[
   $i in supp_"at" (P) <=> pi_i <= P$, where
   $pi_i = (u d)^(i-1) u u d d (u d)^omega$.
+]
+
+#example[
+  The atom spectrum does not determine the path. Both paths below have
+  $supp_"at" = \{1, 2\}$, yet $u u d u d d (u d)^omega < u u u d d d (u d)^omega$.
+
+  #figure(
+    grid(
+      columns: 2,
+      column-gutter: 1.6em,
+      row-gutter: 0.5em,
+      align: center,
+      dyck-diagram(n: 10, height: 3, unit: 0.42cm, x-ticks: 2, y-ticks: none, {
+        dyck-path("ud" * 5, color: cmute, offset: -0.08)
+        dyck-path("uuuddd" + "ud" * 2, color: cI, fill: auto, dots: true)
+      }),
+      dyck-diagram(n: 10, height: 3, unit: 0.42cm, x-ticks: 2, y-ticks: none, {
+        dyck-path("ud" * 5, color: cmute, offset: -0.08)
+        dyck-path("uududd" + "ud" * 2, color: cII, fill: auto, dots: true)
+      }),
+      text(fill: cI)[$u u u d d d (u d)^omega$],
+      text(fill: cII)[$u u d u d d (u d)^omega$],
+    )
+  )
+
+  In Ferrari's terms the left path is one pyramid, hence join-irreducible with
+  atom-interval $[1, 2]$, while the right one is $pi_1 or pi_2$: the invariant
+  that separates them is the antichain of intervals, $\{[1,2]\}$ against
+  $\{[1], [2]\}$, of which $supp_"at" (P)$ retains only the union. So
+  $supp_"at"$ is a finiteness test, not a representation.
 ]
 
 // (3) lattice structure of the ambient object, stated once
@@ -157,9 +181,7 @@ $
 == Model 1
 
 $
-  iota_n : D_n -> D_(n+1),
-  wide
-  iota_n (P) = P u d.
+  iota_n : D_n -> D_(n+1), wide iota_n (P) = P u d.
 $
 
 // (4) well-definedness obligations, stated before the colimit
@@ -170,38 +192,17 @@ $
 ]
 
 $
-  cal(D)_colim
-  =
-  limits(colim)_n D_n,
+  cal(D)_colim = limits(colim)_n D_n,
   wide
-  (n,P) tilde.op (m,Q)
-  quad arrow.l.r.double quad
-  exists k >= n,m :
-  P (u d)^(k-n) = Q (u d)^(k-m),
-$
-
-// (5) name the category of the colimit explicitly
-// "colimit in the category of bounded-below distributive lattices
-//  and embeddings; NOT a colimit of Heyting algebras"
-
-$
-  [(n,P)] <= [(m,Q)]
-  quad arrow.l.r.double quad
-  exists k >= n,m :
-  P (u d)^(k-n)
-  <=_(D_k)
-  Q (u d)^(k-m).
+  (n,P) tilde.op (m,Q) quad arrow.l.r.double quad exists k >= n,m : P (u d)^(k-n) = Q (u d)^(k-m),
 $
 
 $
-  j :
-  cal(D)_colim
-  arrow.r.hook
-  cal(D)_omega,
-  wide
-  j([(n,P)])
-  =
-  P (u d)^omega.
+  [(n,P)] <= [(m,Q)] quad arrow.l.r.double quad exists k >= n,m : P (u d)^(k-n) <=_(D_k) Q (u d)^(k-m).
+$
+
+$
+  j : cal(D)_colim arrow.r.hook cal(D)_omega, wide j([(n,P)]) = P (u d)^omega.
 $
 
 // (6) the image characterization is a proposition with a proof,
@@ -224,15 +225,9 @@ $
 // (7) do not restate D_omega here — it was defined in the Setup
 
 $
-  cal(D)_(infinity"-supp")
-  =
-  \{ P in cal(D)_omega mid(|) abs(supp(P)) = infinity \},
+  cal(D)_(infinity"-supp") = \{ P in cal(D)_omega mid(|) abs(supp(P)) = infinity \},
   wide
-  cal(D)_omega
-  =
-  j(cal(D)_colim)
-  union.sq
-  cal(D)_(infinity"-supp").
+  cal(D)_omega = j(cal(D)_colim) union.sq cal(D)_(infinity"-supp").
 $
 
 // (8) record that Model 2 is a stratum, not a subalgebra
@@ -249,402 +244,165 @@ $
 
 // (9) optional refinement, if you want the conservative reading
 $
-  R(P) = \{ i >= 1 mid(|) h_P (2i) = 0 \},
+  R(P) = \{ i >= 1 | h_P (2i) = 0 \},
   wide
-  cal(D)_(infinity"-supp")
-  =
-  underbrace(\{ abs(R(P)) = infinity \}, "recurrent")
-  union.sq
-  underbrace(\{ abs(R(P)) < infinity \}, "transient").
+  cal(D)_(infinity"-supp") = underbrace(\{ abs(R(P)) = infinity \}, "recurrent") union.sq underbrace(\{ abs(R(P)) < infinity \}, "transient").
 $
 
 
-= Logic
+=  Unbounded Interval Temporal Logics
 
 $
-  cal(D)_omega
-  :=
-  lr(
-    {
-      P in {u,d}^omega
-      mid(|)
-      forall n in NN, h_P(n) >= 0
-    }
-  ).
-$
-
-$
+  cal(D)_omega := \{ P in \{u, d\}^omega mid(|) forall n in NN, h_P (n) >= 0 \},
+  wide
   bot := (u d)^omega.
 $
 
 $
-  supp(P)
-  :=
-  lr(
-    {
-      n in NN
-      mid(|)
-      h_P(n) != h_bot(n)
-    }
-  ).
+  supp(P) := \{ n in NN mid(|) h_P (n) != h_bot (n) \}.
 $
 
 $
-  cal(D)_"fs"
-  :=
-  lr(
-    {
-      P in cal(D)_omega
-      mid(|)
-      abs(supp(P)) < infinity
-    }
-  ).
+  cal(D)_"fs" := \{ P in cal(D)_omega mid(|) abs(supp(P)) < infinity \},
+  wide
+  cal(D)_"is" := \{ P in cal(D)_omega mid(|) abs(supp(P)) = infinity \}.
 $
 
 $
-  cal(D)_"is"
-  :=
-  lr(
-    {
-      P in cal(D)_omega
-      mid(|)
-      abs(supp(P)) = infinity
-    }
-  ).
-$
-
-$
-  cal(D)_omega
-  =
-  cal(D)_"fs"
-  union.sq
-  cal(D)_"is".
+  cal(D)_omega = cal(D)_"fs" union.sq cal(D)_"is".
 $
 
 
 == Logic of Model 1
 
 $
-  D_0
-  arrow.r
-  D_1
-  arrow.r
-  D_2
-  arrow.r
-  dots.c,
-  wide
-  iota_n(P) = P u d.
+  D_0 arrow.r D_1 arrow.r D_2 arrow.r dots.c, wide iota_n (P) = P u d.
 $
 
 $
-  cal(D)_1
-  :=
-  limits("colim")_n D_n.
+  cal(D)_1 := limits(colim)_n D_n
+  tilde.equiv cal(D)_"fs" = \{ P in cal(D)_omega mid(|) abs(supp(P)) < infinity \}.
 $
 
 $
-  cal(D)_1
-  tilde.equiv
-  cal(D)_"fs"
-  =
-  lr(
-    {
-      P in cal(D)_omega
-      mid(|)
-      abs(supp(P)) < infinity
-    }
-  ).
+  bot = (u d)^omega in cal(D)_1, wide top in.not cal(D)_1.
 $
 
 $
-  bot = (u d)^omega
-  in cal(D)_1.
+  P, Q in cal(D)_1 quad => quad P and Q in cal(D)_1, wide P or Q in cal(D)_1.
 $
 
 $
-  top in.not cal(D)_1.
+  h_(P and Q) (n) = min(h_P (n), h_Q (n)), wide h_(P or Q) (n) = max(h_P (n), h_Q (n)).
 $
 
 $
-  P,Q in cal(D)_1
-  quad => quad
-  P and Q in cal(D)_1,
-  wide
-  P or Q in cal(D)_1.
+  supp(P and Q) = supp(P) inter supp(Q), wide supp(P or Q) = supp(P) union supp(Q).
 $
 
 $
-  h_(P and Q)(n)
-  =
-  min(h_P(n), h_Q(n)).
+  cal(D)_1 = "distributive lattice with bottom, without top".
 $
 
 $
-  h_(P or Q)(n)
-  =
-  max(h_P(n), h_Q(n)).
+  not exists top quad => quad not exists " global Heyting implication".
 $
 
 $
-  supp(P and Q)
-  =
-  supp(P) inter supp(Q).
-$
-
-$
-  supp(P or Q)
-  =
-  supp(P) union supp(Q).
-$
-
-$
-  cal(D)_1
-  =
-  "distributive lattice with bottom, without top".
-$
-
-$
-  not exists top
-  quad => quad
-  not exists " global Heyting implication".
-$
-
-$
-  cal(L)_1
-  =
-  lr(
-    {
-      bot,
-      and,
-      or
-    }
-  ).
+  cal(L)_1 = \{ bot, and, or \}.
 $
 
 
 == Logic of Model 2
 
 $
-  cal(D)_2
-  :=
-  cal(D)_"is"
-  =
-  lr(
-    {
-      P in cal(D)_omega
-      mid(|)
-      abs(supp(P)) = infinity
-    }
-  ).
+  cal(D)_2 := cal(D)_"is" = \{ P in cal(D)_omega mid(|) abs(supp(P)) = infinity \}.
 $
 
 $
-  (u d)^omega
-  in.not
-  cal(D)_2.
+  (u d)^omega in.not cal(D)_2, wide top = u^omega in cal(D)_2.
 $
 
 $
-  top
-  =
-  u^omega
-  in
-  cal(D)_2.
+  P, Q in cal(D)_2 quad => quad P or Q in cal(D)_2.
 $
 
 $
-  P,Q in cal(D)_2
-  quad => quad
-  P or Q in cal(D)_2.
-$
-
-$
-  supp(P or Q)
-  =
-  supp(P) union supp(Q).
-$
-
-$
-  abs(supp(P)) = infinity
-  quad => quad
-  abs(supp(P or Q)) = infinity.
-$
-
-$
-  P,Q in cal(D)_2
-  quad not=> quad
-  P and Q in cal(D)_2.
-$
-
-$
-  supp(P and Q)
-  =
-  supp(P) inter supp(Q).
-$
-
-$
-  abs(supp(P)) = infinity,
-  quad
-  abs(supp(Q)) = infinity
-  quad not=> quad
-  abs(supp(P) inter supp(Q)) = infinity.
-$
-
-$
-  bot in.not cal(D)_2,
+  supp(P or Q) = supp(P) union supp(Q),
   wide
-  and " is not closed".
+  abs(supp(P)) = infinity quad => quad abs(supp(P or Q)) = infinity.
 $
 
 $
-  cal(D)_2
-  =
-  "join-semilattice with top".
+  P, Q in cal(D)_2 quad arrow.r.double.not quad P and Q in cal(D)_2.
 $
 
 $
-  cal(L)_2
-  =
-  lr(
-    {
-      top,
-      or
-    }
-  ).
+  supp(P and Q) = supp(P) inter supp(Q),
+  wide
+  abs(supp(P)) = abs(supp(Q)) = infinity
+  quad arrow.r.double.not quad abs(supp(P) inter supp(Q)) = infinity.
 $
 
 $
-  not exists bot,
-  wide
-  not exists " global " and,
-  wide
-  not exists " global " arrow.r,
-  wide
-  not exists " global negation".
+  bot in.not cal(D)_2, wide and " is not closed".
+$
+
+$
+  cal(D)_2 = "join-semilattice with top", wide cal(L)_2 = \{ top, or \}.
+$
+
+$
+  not exists bot, wide not exists " global " and, wide
+  not exists " global " arrow.r, wide not exists " global negation".
 $
 
 
 == Completion
 
 $
-  cal(D)_omega
-  =
-  cal(D)_"fs"
-  union.sq
-  cal(D)_"is".
+  cal(D)_omega = cal(D)_"fs" union.sq cal(D)_"is",
+  wide
+  cal(D)_1 arrow.r cal(D)_omega arrow.l cal(D)_2.
 $
 
 $
-  cal(D)_1
-  arrow.r
-  cal(D)_omega
-  arrow.l
-  cal(D)_2.
+  cal(D)_1 tilde.equiv cal(D)_"fs" subset.eq cal(D)_omega,
+  wide
+  cal(D)_2 = cal(D)_"is" subset.eq cal(D)_omega.
 $
 
 $
-  cal(D)_1
-  tilde.equiv
-  cal(D)_"fs"
-  subset.eq
-  cal(D)_omega.
+  bot = (u d)^omega, wide top = u^omega.
 $
 
 $
-  cal(D)_2
-  =
-  cal(D)_"is"
-  subset.eq
-  cal(D)_omega.
+  h_(sup_(i in I) P_i) (n) = sup_(i in I) h_(P_i) (n),
+  wide
+  h_(inf_(i in I) P_i) (n) = inf_(i in I) h_(P_i) (n).
 $
 
 $
-  bot
-  =
-  (u d)^omega.
+  P and (sup_(i in I) Q_i) = sup_(i in I) (P and Q_i).
 $
 
 $
-  top
-  =
-  u^omega.
+  cal(D)_omega = "frame" = "complete Heyting algebra".
 $
 
 $
-  h_(sup_(i in I) P_i)(n)
-  =
-  sup_(i in I) h_(P_i)(n).
+  P arrow.r Q = sup \{ R in cal(D)_omega mid(|) P and R <= Q \},
+  wide
+  not P = P arrow.r bot.
 $
 
 $
-  h_(inf_(i in I) P_i)(n)
-  =
-  inf_(i in I) h_(P_i)(n).
+  cal(L)_omega = \{ bot, top, and, or, arrow.r, not \}
+  + \{ sup_(i in I), inf_(i in I) \}.
 $
 
 $
-  P and lr(sup_(i in I) Q_i)
-  =
-  sup_(i in I) lr(P and Q_i).
-$
-
-$
-  cal(D)_omega
-  =
-  "frame"
-  =
-  "complete Heyting algebra".
-$
-
-$
-  P arrow.r Q
-  =
-  sup
-  lr(
-    {
-      R in cal(D)_omega
-      mid(|)
-      P and R <= Q
-    }
-  ).
-$
-
-$
-  not P
-  =
-  P arrow.r bot.
-$
-
-$
-  cal(L)_omega
-  =
-  lr(
-    {
-      bot,
-      top,
-      and,
-      or,
-      arrow.r,
-      not
-    }
-  ).
-$
-
-$
-  cal(L)_omega
-  +
-  lr(
-    {
-      sup_(i in I),
-      inf_(i in I)
-    }
-  ).
-$
-
-$
-  "Idl"(cal(D)_1)
-  tilde.equiv
-  cal(D)_omega.
+  "Idl"(cal(D)_1) tilde.equiv cal(D)_omega.
 $
 
 
@@ -678,9 +436,9 @@ $
   [*Arbitrary joins*], [$times$], [$"nonempty"$], [$checkmark$],
 
   [*Algebra*],
-  [$"distributive lattice + bottom"$],
-  [$"join-semilattice + top"$],
-  [$"complete Heyting algebra / frame"$],
+  [$"DL + bottom"$],
+  [$"JSL + top"$],
+  [$"complete Heyt / frame"$],
 
   [*Logic*], [$bot, and, or$], [$top, or$], [$bot, top, and, or, arrow.r, not$],
 
