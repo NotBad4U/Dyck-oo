@@ -1,17 +1,19 @@
 #import "@preview/cetz:0.3.4"
 #import "@preview/theoretic:0.4.0"
+#import "@preview/dashy-todo:0.1.3": todo
 #import theoretic.presets.basic: * // this will automatically load predefined styled environments
 #show ref: theoretic.show-ref      // this is necessary for references to theorems to work
 
 #import "lib.typ": *
 
-#set document(title: [Dyck Paths with Infinite Support and Unbounded Temporal Logic])
+#set document(title: [Infinite Dyck Paths Algebra for Unbounded Interval Temporal Logic])
 #set page(numbering: "1")
 #set par(justify: true)
 
 // Multi-letter math operators (Typst has no LaTeX-style \operatorname macros).
 #let supp = math.op("supp")
 #let colim = math.op("colim")
+#let Int = math.op("Int")
 
 #title()
 
@@ -55,38 +57,35 @@ run.
       dyck-path(bot-word, color: cmute, offset: -0.08)
       dyck-path(P-inf, color: cII, fill: auto, dots: true)
     }),
-  )
+  ),
 ) <fig:two-models>
 
-= Formalising Model 1 and 2
 
-== Ambient definitions
+= Ambient definitions
 
 For a path $P = p_0 p_1 p_2 dots$, we define the function $h_P (n)$ that returns the height of $P$ after its first $n$ steps.
 
 $
-  h_P (0) = 0, wide h_P (n) = \#{i < n | p_i = u} - \#{i < n | p_i = d}.
+  h_P (0) = 0, wide h_P (n) = |{i < n | p_i = u}| - |{i < n | p_i = d}|.
 $
 
 $
   cal(D)_omega = \{ P = (p_i)_(i in NN) in \{u, d\}^omega mid(|) forall n in NN, h_P (n) >= 0 \}
 $
 
-$
-  P <= Q quad arrow.l.r.double quad forall n in NN, h_P (n) <= h_Q (n).
-$
+#definition("geometric order")[
+  For $P, Q in cal(D)_omega$ set
+  $
+    P <= Q quad arrow.l.r.double quad forall n in NN, h_P (n) <= h_Q (n),
+  $
+  and say that $P$ lies _weakly below_ $Q$. We call $<=$ the _geometric order_,
+  since it compares the two drawings pointwise. It restricts to each $D_n$, and
+  $(D_n, <=)$ is the Dyck lattice of order $n$ of @Ferrari2015DyckAI.
+]
 
-$
-  bot = (u d)^omega, wide h_bot (n) =
-  cases(
-    0 & "if " n = 0 mod 2,
-    1 & "if " n = 1 mod 2,
-  ).
-$
-
-We import the local vocabulary of @Ferrari2015DyckAI, transposed to infinite
-words. A _return_ of $P$ is an index $n > 0$ with $h_P (n) = 0$; a _peak_ is a
-pair of consecutive steps $p_n p_(n+1) = u d$, and a _hill_ is a peak at height
+We import the vocabulary of @Ferrari2015DyckAI about specific Dyck paths, transposed to infinite
+words. A _return_ of a path $P$ is an index $n > 0$ with $P$ crossing the $x$ axis i.e. $h_P (n) = 0$;
+a _peak_ is a pair of consecutive steps $p_n p_(n+1) = u d$, and a _hill_ is a peak at height
 $0$, i.e. one with $h_P (n) = 0$. A _pyramid_ is a block $u^k d^k$ ($k >= 1$)
 starting and ending on the axis, so a hill is the pyramid with $k = 1$. Finally,
 a _factor_ of $P$ is a block of consecutive steps running between two
@@ -94,9 +93,19 @@ consecutive returns (or from the origin to the first return); a hill is also
 called a _trivial factor_. In the finite case every Dyck path is the
 juxtaposition of its factors; here the same holds for the prefix of $P$ up to
 its last return, and a path with infinitely many returns is the juxtaposition of
-infinitely many factors. In this language $bot = (u d)^omega$ is the unique path
-all of whose factors are hills, and the atom $pi_i$ introduced below is the path
+infinitely many factors. The atom $pi_i$ are the path
 whose factors are all hills except for a single pyramid $u u d d$.
+
+#definition("limit path")[
+  In this language, we denote $bot$ as the unique path all of whose factors are hills.
+  $
+    bot = (u d)^omega, wide h_bot (n) =
+    cases(
+      0 & "if " n = 0 mod 2,
+      1 & "if " n = 1 mod 2,
+    ).
+  $
+]
 
 // (2) two variants of supp, with the translation between them
 
@@ -114,32 +123,66 @@ $
 
 The second variant samples only the even times, and there $bot$ is on the axis:
 since paths never go below $0$, "differing from $bot$" and "being strictly
-above the axis" say the same thing. The next lemma shows that this sampling
+above the axis" say the same thing. The next two lemmas show that this sampling
 loses nothing, so we may use whichever variant is convenient.
 
 #lemma[
-  $supp_"at" (P) = \{ i mid(|) 2i in supp(P) \}$, and
-  $abs(supp(P)) < infinity <=> abs(supp_"at" (P)) < infinity$.
-]
-#proof[
-  The first identity is immediate from $h_bot (2i) = 0$ and $h_P >= 0$.
-  For the second, suppose $h_P (2i) = 0$ for all $i >= m$. Between two
-  consecutive even times at height $0$ there are exactly two steps, and
-  nonnegativity forces them to be $u$ then $d$ --- a hill --- so
-  $h_P (2i+1) = 1 = h_bot (2i+1)$ there as well. Hence $supp(P) subset.eq
-  [0, 2m]$ is finite. The converse follows from the first identity, which
-  embeds $supp_"at" (P)$ into $supp(P)$ via $i |-> 2i$.
+  $supp_"at" (P) = \{ i mid(|) 2i in supp(P) \}$.
 ]
 
-// (2') the reason to keep supp_at: it is the atom spectrum
+
+#lemma[
+  $abs(supp(P)) < infinity <=> abs(supp_"at" (P)) < infinity$.
+]
+
 #lemma[
   $i in supp_"at" (P) <=> pi_i <= P$, where
   $pi_i = (u d)^(i-1) u u d d (u d)^omega$.
 ]
 
+// (2'') the interval representation: down-sets, not antichains
+
+Ferrari represents a path of $D_n$ by an antichain of intervals of $[n-1]$,
+namely the orders of the atoms lying below each join-irreducible in its
+decomposition @Ferrari2015DyckAI. We keep the intervals, but not the antichain.
+
+#definition("interval representation")[
+  Let $Int$ denote the set of finite nonempty intervals $I = [a, b]$ of
+  $NN_(>= 1)$, ordered by inclusion. For $I = [a, b] in Int$ put
+  $
+    J_I = (u d)^(a-1) u^(b-a+2) d^(b-a+2) (u d)^omega,
+  $
+  the path all of whose factors are hills except for a single pyramid, and set
+  $
+    hat(F)_P = \{ I in Int mid(|) J_I <= P \}.
+  $
+]
+
+Each $J_I$ is join-irreducible in $cal(D)_omega$, and $J_([i, i]) = pi_i$; hence
+$supp_"at" (P) = \{ i mid(|) [i, i] in hat(F)_P \}$: the support records exactly
+the singletons of $hat(F)_P$, and forgets every wider interval.
+
+#lemma[
+  $J_I <= J_(I')$ if and only if $I subset.eq I'$. In particular $hat(F)_P$ is a
+  down-set of $Int$.
+]
+
+// #remark[
+//   In the finite case a down-set of intervals is determined by its maximal
+//   elements, and Ferrari works with that antichain throughout. Over
+//   $cal(D)_omega$ the antichain is no longer available. For $P = top = u^omega$
+//   every join-irreducible satisfies $J_I <= P$, so $hat(F)_P = Int$, a down-set
+//   with no maximal element whatsoever: the associated antichain is empty, which
+//   is the representation of $bot$ and not of $top$. This is the failure of
+//   directed sups, $or.big_n u^n d^n (u d)^omega = u^omega$, seen from the
+//   representation side, and it is why we carry the whole down-set.
+// ]
+
 #example[
-  The atom spectrum does not determine the path. Both paths below have
-  $supp_"at" = \{1, 2\}$, yet $u u d u d d (u d)^omega < u u u d d d (u d)^omega$.
+  Knowing $supp_"at" (P)$ is not enough to know $P$. Both paths below have
+  $supp_"at" = \{1, 2\}$, yet
+  #text(fill: cII)[$u u d u d d (u d)^omega$] $<$
+  #text(fill: cI)[$u u u d d d (u d)^omega$].
 
   #figure(
     grid(
@@ -155,16 +198,23 @@ loses nothing, so we may use whichever variant is convenient.
         dyck-path("ud" * 5, color: cmute, offset: -0.08)
         dyck-path("uududd" + "ud" * 2, color: cII, fill: auto, dots: true)
       }),
-      text(fill: cI)[$u u u d d d (u d)^omega$],
-      text(fill: cII)[$u u d u d d (u d)^omega$],
-    )
+
+      text(fill: cI)[$u u u d d d (u d)^omega$], text(fill: cII)[$u u d u d d (u d)^omega$],
+    ),
   )
 
-  In Ferrari's terms the left path is one pyramid, hence join-irreducible with
-  atom-interval $[1, 2]$, while the right one is $pi_1 or pi_2$: the invariant
-  that separates them is the antichain of intervals, $\{[1,2]\}$ against
-  $\{[1], [2]\}$, of which $supp_"at" (P)$ retains only the union. So
-  $supp_"at"$ is a finiteness test, not a representation.
+  The order is exactly what the picture shows: at every abscissa the
+  #text(fill: cII)[right] path sits weakly below the #text(fill: cI)[left] one,
+  and that pointwise comparison of heights is all that $<=$ means.
+
+  The two are nevertheless different paths. The #text(fill: cI)[left] one is a
+  single pyramid, hence join-irreducible with atom-interval $[1, 2]$, while the
+  #text(fill: cII)[right] one is $pi_1 or pi_2$; what separates them is the
+  down-set,
+  #text(fill: cI)[$hat(F) = \{[1,1], [2,2], [1,2]\}$] against
+  #text(fill: cII)[$hat(F) = \{[1,1], [2,2]\}$], of which $supp_"at" (P)$
+  retains only the singletons. So $supp_"at" (P)$ tells us whether $P$ has
+  finite support, but not which path $P$ is; only $hat(F)_P$ does that.
 ]
 
 // (3) lattice structure of the ambient object, stated once
@@ -178,51 +228,270 @@ loses nothing, so we may use whichever variant is convenient.
   algebra.
 ]
 
-== Model 1
+== Dyck paths lattice
+
+Each $(D_n, <=)$ is a finite distributive lattice. The @fig-d4 illustrate the lattice for $n = 4$. The bottom is the path of four hills $bot_4$, the top the single pyramid $top_4$, and an edge joins two paths when one covers the other in the geometric order.
+
+#figure(
+  placement: top,
+  dyck-hasse(
+    d4-nodes,
+    d4-edges,
+    unit: 1.5cm,
+    xgap: 1.32,
+    ygap: 0.72,
+    glyph-w: 0.86,
+    glyph-h: 0.32,
+    pad: 0.05,
+    notes: (
+      "udududud": $bot_4 = (u d)^4$,
+      "uuuudddd": $top_4 = u^4 d^4$,
+    ),
+  ),
+  caption: [The Dyck lattice $D_4$, drawn in the geometric order.],
+) <fig-d4>
+
+These finite lattices are the stages of a single tower.
+To pass from one stage to the next we leave the path alone and append a hill at the right end by the inclusion function $iota$ defined below.
+The @fig-iota draws the case $iota_3$.
+
 
 $
   iota_n : D_n -> D_(n+1), wide iota_n (P) = P u d.
 $
 
-// (4) well-definedness obligations, stated before the colimit
+#figure(
+  placement: top,
+  dyck-hasse-map(
+    d3-nodes,
+    d3-edges,
+    d4-nodes-mirror,
+    d4-edges,
+    (
+      ("ududud", "udududud"),
+      ("uuddud", "uuddudud"),
+      ("uduudd", "uduuddud"),
+      ("uududd", "uududdud"),
+      ("uuuddd", "uuudddud"),
+    ),
+    highlight: ("udududud", "uduuddud", "uuddudud", "uududdud", "uuudddud"),
+    routes: (
+      "uduudd": ((-4.60, 0.62), (-4.55, 0.28), (-0.90, 0.28), (-0.35, 0.64)),
+    ),
+    titles: ($D_3$, $D_4$),
+    map-label: $iota_3$,
+    map-label-on: "uuuddd",
+  ),
+  caption: [
+    The case $iota_3 : D_3 arrow.r.hook D_4$.
+  ],
+) <fig-iota>
+
+
+Appending a hill is also the extension that fixes the floor, sending
+$bot_n = (u d)^n$ to $bot_(n+1)$, which keeps the whole tower compatible with
+the reference path against which support is measured. In the interval
+representation the map does nothing at all: the intervals representing $P$ are
+unchanged and only the ambient index set grows from $[n-1]$ to $[n]$, the new
+atom $pi_n$ failing to lie below $P u d$ because $P u d$ has returned to the
+axis at abscissa $2n$. Appending hills lets a path of one stage be compared with a path of any later
+one, and two paths should count as equal when the tower eventually makes them so.
+
+#definition("eventual equality", label: <def-eventual-equality>)[
+  For $n <= k$ let $iota_(n,k) : D_n -> D_k$ denote the composite
+  $iota_(k-1) compose dots.c compose iota_n$, with $iota_(n,n) = "id"$; that is,
+  $iota_(n,k) (P) = P (u d)^(k-n)$. On the disjoint union
+  $
+    product.co_(n in NN) D_n = \{ (n, P) mid(|) n in NN, P in D_n \}
+  $
+  define
+  $
+    (n, P) tilde.op (m, Q) quad arrow.l.r.double quad
+    exists k >= max(n, m) : iota_(n,k) (P) = iota_(m,k) (Q).
+  $
+] <def:equiv-class>
+
+The relation $tilde.op$ is obviously an equivalence relation.
+Its classes are what let paths of different lengths be compared at all: $P in
+D_n$ and $Q in D_m$ with $n != m$.
+
+
+#todo(position: "inline")[intro $D_omega$ lattice and figure @fig-omega]
+
+#figure(
+  placement: bottom,
+  omega-sketch(),
+  caption: [
+    The two strata of $cal(D)_omega$, and the tower $D_1 subset D_2 subset
+    dots.c D_omega$.
+  ],
+) <fig-omega>
+
+= Model 1
+
+We restate that Model 1 corresponds to the set of all Dyck paths (of any
+length), which is naturally partially ordered, and can probably be interpreted
+as some kind of infinitary limit object for the family of Dyck lattices
+@ferrari2004latticeslatticepaths @ferrari2009latticespathsrepresentationtheory @baril2025latticedyckpathsclose.
 
 #lemma[
-  $iota_n$ is an order-embedding preserving $or$, $and$, and $bot$;
-  it preserves neither $top$ nor $tilde$ nor $arrow.squiggly$.
+  $iota_n$ is injective.
 ]
 
-$
-  cal(D)_colim = limits(colim)_n D_n,
-  wide
-  (n,P) tilde.op (m,Q) quad arrow.l.r.double quad exists k >= n,m : P (u d)^(k-n) = Q (u d)^(k-m),
-$
+
+#lemma(label: <lem-iota>)[
+  $iota_n$ is an order-embedding preserving function.
+]
+
+The infinitary limit object $cal(D)_colim$ for the family of Dyck lattices, denoted $limits(colim) D_n$, is the colimit of the chain $D_0 ->_iota D_1 ->_iota D_2 -> dots.c$ along the maps $iota_n$: the smallest object in
+which every stage sits compatibly.
+Therefore, the $cal(D)_colim$ is simply the increasing union of the tower quotiented by $tilde.op$.
+
+#definition($"Direct limit of" D_n$)[
+  Writing $[(n, P)]$ for the $tilde.op$-class of $(n, P)$, put
+  $
+    cal(D)_colim = (product.co_(n in NN) D_n) \/ tilde.op,
+    wide
+    c_n : D_n -> cal(D)_colim, quad c_n (P) = [(n, P)],
+  $
+  and equip $cal(D)_colim$ with
+  $
+    [(n,P)] <= [(m,Q)] quad arrow.l.r.double quad
+    exists k >= max(n, m) : iota_(n,k) (P) <=_(D_k) iota_(m,k) (Q),
+  $
+  $
+    [(n,P)] or [(m,Q)] = [(k, iota_(n,k) (P) or_(D_k) iota_(m,k) (Q))],
+  $
+  and
+  $
+    [(n,P)] and [(m,Q)] = [(k, iota_(n,k) (P) and_(D_k) iota_(m,k) (Q))]
+  $
+  for any $k >= max(n, m)$, and $bot = [(0, epsilon)]$ with $epsilon$ the empty
+  path.
+]
+
+An element of $cal(D)_colim$ is thus a finite Dyck path together with the
+convention that the flat ground to its right does not count. Letting that ground
+run forever is exactly a subset of $cal(D)_omega$.
 
 $
-  [(n,P)] <= [(m,Q)] quad arrow.l.r.double quad exists k >= n,m : P (u d)^(k-n) <=_(D_k) Q (u d)^(k-m).
+  j : cal(D)_colim arrow.hook cal(D)_omega wide j([(n,P)]) = P (u d)^omega.
 $
 
-$
-  j : cal(D)_colim arrow.r.hook cal(D)_omega, wide j([(n,P)]) = P (u d)^omega.
-$
 
-// (6) the image characterization is a proposition with a proof,
-//     not a displayed equation
-
-#proposition[
+#proposition(label: <prop-colim-image>)[
   $j$ is an order-embedding, and
   $j(cal(D)_colim) = \{ P in cal(D)_omega mid(|)
   abs(supp(P)) < infinity \}$.
 ]
-#proof[
-  ($subset.eq$) $j([(n,P)])$ agrees with $h_bot$ from abscissa $2n$
-  on. ($supset.eq$) If $h_P = h_bot$ from $N$ on, then from $N$ on
-  the letters of $P$ alternate $u d$, so $P = p (u d)^omega$ with
-  $p$ a finite Dyck word.
+
+== Algebraic representation
+
+Model 1 has a second possible description, it is an initial algebra.
+Recall that an algebra for an endofunctor $F$ is just a map $F(X) -> X$ and a coalgebra is a map $X -> F(X)$;
+neither carries the associativity that an algebra over a monad, or a coalgebra over a comonad,
+would supply. Least and greatest fixpoints of $F$ are written $mu F$ and $nu F$ respectively.
+
+#definition("initial algebra")[
+  An _$F$-algebra_ is a pair $(X, alpha)$ with $alpha : F(X) -> X$, and a
+  morphism of $F$-algebras $(X, alpha) -> (Y, beta)$ is a map $f : X -> Y$ with
+  $f compose alpha = beta compose F(f)$. An algebra $(mu F, "in")$ is _initial_
+  when for every $F$-algebra $(X, alpha)$ there is exactly one such $f$, that is
+  a unique
+  $
+    "fold"(alpha) : mu F -> X
+    quad "with" quad
+    "fold"(alpha) compose "in" = alpha compose F("fold"(alpha)).
+  $
+  #todo(position: "inline")[cite]
+  // It is unique up to isomorphism, and by Lambek's lemma
+  // $"in" : F(mu F) -> mu F$ is itself an isomorphism, so $mu F$ is a fixpoint of
+  // $F$ and it is the least one.
 ]
 
-== Model 2
+Recall finite Dyck words are constructed with the grammar $S ::= epsilon | u S d S$ generates, and that grammar is a signature functor.
 
-// (7) do not restate D_omega here — it was defined in the Setup
+#definition("Dyck initial algebra")[
+  Let $F : "Set" -> "Set"$ be
+  $
+    F(X) = 1 + X times X,
+  $
+  with constructors $epsilon$ (i.e. $emptyset$) for the terminal object $1$ and $u (-) d (-)$ for the
+  product $X times X$, the latter reading a pair $(A, B)$ as the word
+  $u A d B$.
+]
+
+
+#proposition(label: <prop-mu-F>)[
+  $F$ is finitary, so its initial algebra exists and is computed by the initial
+  chain $emptyset -> F(emptyset) -> F^2 (emptyset) -> dots.c$, which converges
+  at $omega$:
+  $
+    mu F = union.big_(k in NN) F^k (emptyset),
+  $
+  with $"in" : F(mu F) -> mu F$ the pair of constructors. Its elements are the finite Dyck words before any quotient.
+]
+
+Let $sigma : F(NN) -> NN$ be the $F$-algebra $sigma(ast) = 0$ and $sigma(a, b) = a + b + 1$, and set
+$
+  ell := "fold"(sigma) : mu F -> NN,
+  quad ell(epsilon) = 0,
+  quad ell(u A d B) = ell(A) + ell(B) + 1,
+$
+the unique map counting the uses of the constructor $u (-) d (-)$, i.e. the semilength.
+
+#proposition[
+  The fibres of $ell$ are the strata of the tower: $ell^(-1)(n)$ is exactly the
+  carrier of $D_n$, so that
+  $
+    mu F = product.co_(n in NN) ell^(-1)(n) tilde.equiv product.co_(n in NN) D_n,
+  $
+  and $abs(ell^(-1)(n)) = C_n$:
+  $
+    1, 1, 2, 5, 14, 42, 132, dots
+  $
+  the Catalan numbers.
+]
+
+#figure(
+  placement: top,
+  table(
+    columns: 4,
+    align: (center + horizon, left, left, center + horizon),
+    inset: (x: 0.8em, y: 0.5em),
+    stroke: none,
+    table.hline(),
+    table.header([$n$], [terms of $mu F$], [word], [count]),
+    table.hline(stroke: 0.5pt),
+    table.cell(rowspan: 1)[$0$], [$epsilon$], [$epsilon$], table.cell(rowspan: 1)[$C_0 = 1$],
+    table.hline(stroke: 0.3pt + luma(80%)),
+    table.cell(rowspan: 1)[$1$], [$u thin epsilon thin d thin epsilon$], [$u d$], table.cell(rowspan: 1)[$C_1 = 1$],
+    table.hline(stroke: 0.3pt + luma(80%)),
+    table.cell(rowspan: 2)[$2$],
+    [$u thin epsilon thin d thin (u thin epsilon thin d thin epsilon)$],
+    [$u d u d$],
+    table.cell(rowspan: 2)[$C_2 = 2$],
+    [$u thin (u thin epsilon thin d thin epsilon) thin d thin epsilon$], [$u u d d$],
+    table.hline(stroke: 0.3pt + luma(80%)),
+    table.cell(rowspan: 5)[$3$],
+    [$u thin epsilon thin d thin (u thin epsilon thin d thin (u thin epsilon thin d thin epsilon))$],
+    [$u d u d u d$],
+    table.cell(rowspan: 5)[$C_3 = 5$],
+    [$u thin epsilon thin d thin (u thin (u thin epsilon thin d thin epsilon) thin d thin epsilon)$], [$u d u u d d$],
+    [$u thin (u thin epsilon thin d thin epsilon) thin d thin (u thin epsilon thin d thin epsilon)$], [$u u d d u d$],
+    [$u thin (u thin epsilon thin d thin (u thin epsilon thin d thin epsilon)) thin d thin epsilon$], [$u u d u d d$],
+    [$u thin (u thin (u thin epsilon thin d thin epsilon) thin d thin epsilon) thin d thin epsilon$], [$u u u d d d$],
+    table.hline(),
+  ),
+  caption: [
+    The correspondance of $mu F$ and Catalan number $C_n = frac(1, n+1) binom(2n, n)$
+  ],
+) <fig-mu-strata>
+
+
+#todo(position: "inline")[define $D_omega$ by the quotienting of $mu F$]
+
+= Model 2
 
 $
   cal(D)_(infinity"-supp") = \{ P in cal(D)_omega mid(|) abs(supp(P)) = infinity \},
@@ -249,18 +518,9 @@ $
   cal(D)_(infinity"-supp") = underbrace(\{ abs(R(P)) = infinity \}, "recurrent") union.sq underbrace(\{ abs(R(P)) < infinity \}, "transient").
 $
 
+= Unbounded Interval Temporal Logics
 
-=  Unbounded Interval Temporal Logics
 
-$
-  cal(D)_omega := \{ P in \{u, d\}^omega mid(|) forall n in NN, h_P (n) >= 0 \},
-  wide
-  bot := (u d)^omega.
-$
-
-$
-  supp(P) := \{ n in NN mid(|) h_P (n) != h_bot (n) \}.
-$
 
 $
   cal(D)_"fs" := \{ P in cal(D)_omega mid(|) abs(supp(P)) < infinity \},
@@ -275,9 +535,6 @@ $
 
 == Logic of Model 1
 
-$
-  D_0 arrow.r D_1 arrow.r D_2 arrow.r dots.c, wide iota_n (P) = P u d.
-$
 
 $
   cal(D)_1 := limits(colim)_n D_n
@@ -408,44 +665,5 @@ $
 
 == Final overview
 
-#table(
-  columns: 4,
-  align: center,
-  inset: 7pt,
-
-  [*Property*], [*Model 1*], [*Model 2*], [*Completion*],
-
-  [*Space*], [$cal(D)_1 = limits("colim")_n D_n$], [$cal(D)_2 = cal(D)_"is"$], [$cal(D)_omega$],
-
-  [*Support*], [$abs(supp(P)) < infinity$], [$abs(supp(P)) = infinity$], [$abs(supp(P)) <= infinity$],
-
-  [*Bottom*], [$(u d)^omega$], [$not exists$], [$(u d)^omega$],
-
-  [*Top*], [$not exists$], [$u^omega$], [$u^omega$],
-
-  [*$and$*], [$checkmark$], [$times$], [$checkmark$],
-
-  [*$or$*], [$checkmark$], [$checkmark$], [$checkmark$],
-
-  [*$arrow.r$*], [$times$], [$times$], [$checkmark$],
-
-  [*$not$*], [$times$], [$times$], [$checkmark$],
-
-  [*Arbitrary meets*], [$times$], [$times$], [$checkmark$],
-
-  [*Arbitrary joins*], [$times$], [$"nonempty"$], [$checkmark$],
-
-  [*Algebra*],
-  [$"DL + bottom"$],
-  [$"JSL + top"$],
-  [$"complete Heyt / frame"$],
-
-  [*Logic*], [$bot, and, or$], [$top, or$], [$bot, top, and, or, arrow.r, not$],
-
-  [*Relation*],
-  [$cal(D)_1 tilde.equiv cal(D)_"fs" subset.eq cal(D)_omega$],
-  [$cal(D)_2 = cal(D)_"is" subset.eq cal(D)_omega$],
-  [$cal(D)_omega = cal(D)_"fs" union.sq cal(D)_"is"$],
-)
 
 #bibliography("refs.bib")
