@@ -592,10 +592,12 @@
 /// A single miniature Dyck path as standalone content, for a table cell or a
 /// run of text. `hmax` fixes the height scale; pass the same value to every
 /// call in a group so the pictures stay comparable.
-#let dyck-mini(word, unit: 1cm, step: 0.11, hunit: 0.11, hmax: auto, color: cpath) = {
+/// - marks: `((i, color), ..)` dots placed on the path at abscissa `i`.
+#let dyck-mini(word, unit: 1cm, step: 0.11, hunit: 0.11, hmax: auto, color: cpath, marks: ()) = {
   import cetz.draw: line, circle
   let n = dyck-len(word)
-  let m = if hmax == auto { calc.max(1, ..dyck-heights(word)) } else { hmax }
+  let hs = dyck-heights(word)
+  let m = if hmax == auto { calc.max(1, ..hs) } else { hmax }
   cetz.canvas(length: unit, {
     if n == 0 {
       circle((0, 0), radius: 0.035, fill: color, stroke: none)
@@ -609,6 +611,9 @@
         color: color,
         base: false,
       )
+      for (i, c) in marks {
+        circle((step * i, hunit * hs.at(i)), radius: 0.035, fill: c, stroke: none)
+      }
     }
   })
 }
@@ -632,5 +637,109 @@
     content((0.30, 0.66), text(0.78em, fill: camberD)[$u$], anchor: "east")
     content((5.30, 0.66), text(0.78em, fill: camberD)[$d$], anchor: "east")
     content((6, -0.5), text(0.72em, fill: cmute)[first return], anchor: "north")
+  })
+}
+
+// ---------- path / down-set / antichain ----------
+
+/// The three equivalent readings of a Dyck path, drawn as a triangle whose
+/// edges carry the passages between them. Illustrated on `uuududdd`, the
+/// coatom of `D_4`: its down-set is every interval of `[3]` except `[1,3]`,
+/// and its antichain is `{[1,2], [2,3]}`, one interval per peak.
+#let interval-triangle(unit: 1cm) = {
+  import cetz.draw: circle, content, line
+
+  let P = (0, 3.7) // the path
+  let F = (-3.9, 0) // the down-set of intervals
+  let A = (3.9, 0) // the antichain of maximal intervals
+
+  let along = (p, q, t) => (
+    p.at(0) + (q.at(0) - p.at(0)) * t,
+    p.at(1) + (q.at(1) - p.at(1)) * t,
+  )
+  let shift = (p, v) => (p.at(0) + v.at(0), p.at(1) + v.at(1))
+  let normal = (p, q, d) => {
+    let dx = q.at(0) - p.at(0)
+    let dy = q.at(1) - p.at(1)
+    let l = calc.sqrt(dx * dx + dy * dy)
+    (-dy / l * d, dx / l * d)
+  }
+  // one passage p -> q, pushed `off` to the left of the segment, labelled
+  // just beyond it
+  let passage = (p, q, t0, t1, off, lab) => {
+    let tip = (end: ">", scale: 0.28, fill: cgray, stroke: cgray)
+    line(
+      shift(along(p, q, t0), normal(p, q, off)),
+      shift(along(p, q, t1), normal(p, q, off)),
+      stroke: 0.55pt + cgray,
+      mark: tip,
+    )
+    content(
+      shift(along(p, q, (t0 + t1) / 2), normal(p, q, off + 0.34)),
+      text(0.62em, fill: cgray, lab),
+      frame: "rect",
+      fill: white,
+      stroke: none,
+      padding: 0.05,
+    )
+  }
+
+  cetz.canvas(length: unit, {
+    // ---- the six passages ----
+    passage(P, F, 0.22, 0.58, 0.2, [pyramid fits]) //  P -> F
+    passage(F, P, 0.22, 0.58, 0.2, [column heights]) //  F -> P
+    passage(F, A, 0.26, 0.6, 0.16, [maximal elements]) //  F -> A
+    passage(A, F, 0.26, 0.6, 0.16, [down-closure]) //  A -> F
+    passage(A, P, 0.22, 0.58, 0.2, [join of pyramids]) //  A -> P
+    passage(P, A, 0.22, 0.58, 0.2, [peaks]) //  P -> A
+
+    // ---- the path ----
+    let gw = 2.0
+    let gh = 0.72
+    dyck-glyph("uuududdd", at: P, w: gw, h: gh, hmax: 4, color: cpath, thickness: 0.9pt)
+    for (i, c) in ((3, cI), (5, cII)) {
+      circle(
+        (P.at(0) - gw / 2 + i * gw / 8, P.at(1) - gh / 2 + 3 * gh / 4),
+        radius: 0.06,
+        fill: c,
+        stroke: none,
+      )
+    }
+    content(shift(P, (0, 0.55)), text(0.75em, fill: cgray)[the path $P$])
+
+    // ---- the down-set, as the Hasse diagram of Int([3]) ----
+    let n1 = shift(F, (-0.62, -0.38))
+    let n2 = shift(F, (0, -0.38))
+    let n3 = shift(F, (0.62, -0.38))
+    let n12 = shift(F, (-0.31, 0.02))
+    let n23 = shift(F, (0.31, 0.02))
+    let n13 = shift(F, (0, 0.42))
+    for (a, b) in ((n1, n12), (n2, n12), (n2, n23), (n3, n23), (n12, n13), (n23, n13)) {
+      line(a, b, stroke: 0.5pt + cmute)
+    }
+    for (p, c) in ((n1, cgray), (n2, cgray), (n3, cgray), (n12, cI), (n23, cII)) {
+      circle(p, radius: 0.075, fill: c, stroke: none)
+    }
+    circle(n13, radius: 0.075, fill: white, stroke: 0.6pt + cmute)
+    content(shift(n13, (0.16, 0.02)), text(0.55em, fill: cmute)[$[1,3]$], anchor: "west")
+    for (p, k) in ((n1, "1"), (n2, "2"), (n3, "3")) {
+      content(shift(p, (0, -0.2)), text(0.55em, fill: cmute)[#k], anchor: "north")
+    }
+    content(shift(F, (0, -0.92)), text(0.75em, fill: cgray)[the down-set $hat(F)_P$])
+
+    // ---- the antichain, as intervals of the chain [3] ----
+    let x = i => A.at(0) + (i - 2) * 0.52
+    let y0 = A.at(1) - 0.4
+    line((x(1) - 0.32, y0), (x(3) + 0.32, y0), stroke: 0.5pt + cmute)
+    for i in (1, 2, 3) {
+      line((x(i), y0 - 0.07), (x(i), y0 + 0.62), stroke: (paint: cmute.transparentize(55%), thickness: 0.4pt, dash: "dotted"))
+      content((x(i), y0 - 0.12), text(0.55em, fill: cmute)[#i], anchor: "north")
+    }
+    for (i, j, h, c) in ((1, 2, 0.2, cI), (2, 3, 0.47, cII)) {
+      line((x(i), y0 + h), (x(j), y0 + h), stroke: 1.6pt + c)
+      circle((x(i), y0 + h), radius: 0.055, fill: c, stroke: none)
+      circle((x(j), y0 + h), radius: 0.055, fill: c, stroke: none)
+    }
+    content(shift(A, (0, -0.92)), text(0.75em, fill: cgray)[the antichain $A_P$])
   })
 }

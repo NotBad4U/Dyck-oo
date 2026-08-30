@@ -22,6 +22,171 @@
 
 = Introduction
 
+== Three readings of a Dyck path
+
+The subject of this paper is an interval temporal logic, and Dyck paths are
+the way we draw it. Following @Ferrari2015DyckAI, take a finite linear order of
+time instants $t_1 < dots < t_(n-1)$, identified with the chain
+$[n-1] = \{1, dots, n-1\}$, and evaluate propositions on its intervals --- the
+spans $[i, j]$ of consecutive instants --- rather than on single instants.
+Among these propositions single out the _hereditary_ ones, those whose truth on
+a span passes to every subspan: this is the logic of subintervals, the fragment
+of Halpern--Shoham logic @halpern1991propositional built on the single relation
+"during". A hereditary proposition is known once the intervals on which it
+holds are, and these form a family closed under taking subintervals, that is a
+down-set of the intervals of $[n-1]$ ordered by inclusion. Dyck paths enter as
+the geometric representation of such families, hence of the propositions
+themselves: an interval is drawn as a pyramid, a family of intervals as the
+skyline of its pyramids, and the pointwise order of two drawings is the
+entailment of the propositions they stand for. Everything below is meant to keep
+this reading available once the time line is no longer bounded.
+
+The analysis of the finite Dyck lattices in @Ferrari2015DyckAI rests on one
+observation: a finite Dyck path can be read in three ways.
+Write $D_n$ for the Dyck paths of semilength $n$ ordered by geometric
+inclusion $P <= Q$ when $P$ lies weakly below $Q$. This is a finite
+distributive lattice, so by Birkhoff's representation theorem @davey2002introduction it is the lattice
+of down-sets of its join-irreducible elements, and those are known: a
+join-irreducible is a path all of whose factors are hills except for a single
+pyramid $u^k d^k$ with $k >= 2$, and it is determined by the interval of atoms
+lying below it. Writing $Int([n-1])$ for the intervals $[i, j]$,
+$1 <= i <= j <= n-1$, of the chain $[n-1]$ ordered by inclusion, this reads
+$
+  D_n tilde.equiv cal(O)(Int([n-1])),
+$
+the lattice of down-sets of $Int([n-1])$. A path, a down-set of intervals and
+the antichain of that down-set's maximal elements are three names for one
+object.
+
+#figure(
+  kind: image,
+  placement: top,
+  stack(
+    dir: ttb,
+    spacing: 1em,
+    interval-triangle(),
+    table(
+      columns: 3,
+      align: (left + horizon, center + horizon, left + horizon),
+      inset: (x: 0.8em, y: 0.45em),
+      stroke: none,
+      table.hline(),
+      table.header([reading], [on $P = u u u d u d d d$], [read off from]),
+      table.hline(stroke: 0.5pt),
+      [the path $P$],
+      dyck-mini("uuududdd", hmax: 4, step: 0.17, hunit: 0.17, marks: ((3, cI), (5, cII))),
+      [the coatom of $D_4$, with peaks above the axis at abscissas
+        #text(fill: cI)[$3$] and #text(fill: cII)[$5$]],
+      table.hline(stroke: 0.3pt + luma(80%)),
+      [the antichain $A_P$],
+      [$\{ #text(fill: cI)[$[1,2]$], #text(fill: cII)[$[2,3]$] \}$],
+      [one maximal interval per peak of $P$ above the axis],
+      table.hline(stroke: 0.3pt + luma(80%)),
+      [the down-set $hat(F)_P$],
+      [$Int([3]) without \{[1,3]\}$],
+      [the down-closure of $A_P$],
+      table.hline(),
+    ),
+  ),
+  caption: [The three readings, on the coatom $P = u u u d u d d d$ of $D_4$.],
+) <fig:triangle>
+
+// We write $hat(F)_P subset.eq Int([n-1])$ for the down-set of $P$ and $A_P$ for its antichain of maximal elements.
+
+// / Path $arrow.r$ down-set: the interval $[i,j]$ lies below $P$ exactly when the
+//   pyramid of height $j - i + 2$ planted at slot $i$ fits underneath it,
+//   $
+//     [i,j] in hat(F)_P quad <==> quad h_P (i + j) >= j - i + 2.
+//   $
+// / Down-set $arrow.r$ path: the path is read back column by column, its height at
+//   $x$ being one more than the length of the longest interval of $hat(F)_P$
+//   centred there, and $h_bot (x)$ when no interval is.
+// / Down-set $arrow.l.r$ antichain: $A_P$ is the set of maximal elements of
+//   $hat(F)_P$, and $hat(F)_P$ is the down-closure of $A_P$. The intervals of
+//   $A_P$ are pairwise incomparable, but they may well overlap.
+// / Path $arrow.r$ antichain: the maximal intervals are visible in the drawing.
+//   Each peak of $P$ at abscissa $x$ and height $k >= 2$ contributes
+//   $
+//     [(x - k) / 2 + 1, (x + k) / 2 - 1],
+//   $
+//   a hill contributing nothing.
+// / Antichain $arrow.r$ path: $P = or.big_([i,j] in A_P) J_([i,j])$, where
+//   $J_([i,j])$ is the join-irreducible whose pyramid spans $[i,j]$. The join
+//   superposes intervals without fusing them: two overlapping maximal intervals
+//   produce two peaks separated by a saddle, not one taller pyramid.
+
+#example[
+  Take $n = 4$, so the time line is the chain $[3] = \{1, 2, 3\}$ and $Int([3])$
+  has the six elements $[1,1], [2,2], [3,3], [1,2], [2,3], [1,3]$. For
+  $P = u u u d u d d d$, with height profile $0, 1, 2, 3, 2, 3, 2, 1, 0$, the
+  test $h_P (i + j) >= j - i + 2$ runs over those six:
+
+  #align(center, table(
+    columns: 6,
+    stroke: none,
+    inset: (x: 0.5em, y: 0.28em),
+    align: (right, left, right, left, right, left),
+    [$[1,1]$], [$h_P (2) = 2 >= 2$],
+    [$[2,2]$], [$h_P (4) = 2 >= 2$],
+    [$[3,3]$], [$h_P (6) = 2 >= 2$],
+    [$[1,2]$], [$h_P (3) = 3 >= 3$],
+    [$[2,3]$], [$h_P (5) = 3 >= 3$],
+    [$[1,3]$], [$h_P (4) = 2 gt.eq.not 4$],
+  ))
+
+  So $hat(F)_P$ is everything but $[1,3]$, and its maximal elements are
+  $A_P = \{[1,2], [2,3]\}$ --- the same answer the peak rule gives at a glance.
+  Running the computation over all of $D_4$ labels each of its fourteen paths
+  with an antichain of intervals of $[3]$:
+
+  #let mini = w => dyck-mini(w, hmax: 4, step: 0.17, hunit: 0.17)
+  #align(center, table(
+    columns: 4,
+    stroke: none,
+    align: (center + horizon, left + horizon, center + horizon, left + horizon),
+    inset: (x: 0.7em, y: 0.3em),
+    mini("udududud"), [$emptyset$], mini("uudududd"), [$\{[1,1], [2,2], [3,3]\}$],
+    mini("uuddudud"), [$\{[1,1]\}$], mini("uuudddud"), [$\{[1,2]\}$],
+    mini("uduuddud"), [$\{[2,2]\}$], mini("uduuuddd"), [$\{[2,3]\}$],
+    mini("ududuudd"), [$\{[3,3]\}$], mini("uuuddudd"), [$\{[1,2], [3,3]\}$],
+    mini("uududdud"), [$\{[1,1], [2,2]\}$], mini("uuduuddd"), [$\{[1,1], [2,3]\}$],
+    mini("uudduudd"), [$\{[1,1], [3,3]\}$], mini("uuududdd"), [$\{[1,2], [2,3]\}$],
+    mini("uduududd"), [$\{[2,2], [3,3]\}$], mini("uuuudddd"), [$\{[1,3]\}$],
+  ))
+
+  Reading the two columns against @fig-d4: the empty antichain is $bot_4$, the
+  single interval $[1,3]$ spanning the whole chain is $top_4$, and the number of
+  intervals in $A_P$ is the number of nontrivial peaks of $P$.
+]
+
+== From a bounded time line to an unbounded one
+
+Everything above is finite with the chain $[n-1]$: the intervals are the time
+spans of a bounded history, and the lattice they generate is bounded with them.
+The suggestion this paper follows is to let that chain run off to the right and
+keep the triangle standing, or as much of it as will stand. An unbounded Dyck
+path is still to be read as a down-set of intervals of the time line
+$NN_(>= 1)$, hence as a hereditary proposition about an unbounded future, and
+the question becomes which connectives such paths support once no last stage
+closes them off. The passage between a path and its down-set survives intact;
+the antichain of maximal intervals does not always, since a down-set of an
+infinite poset may have no maximal elements at all, and we will keep the
+intervals but not the antichain.
+
+What holds the triangle up is a representation theorem, and it is worth saying
+on which scale ours sits. Birkhoff's theorem is a statement about finite
+distributive lattices. Its general form for bounded distributive lattices is
+Priestley duality, which trades the finite poset of join-irreducibles for an
+ordered topological space; beside it stands the topology-free representation of
+the down-set lattice $cal(O)(P)$ of an arbitrary poset $P$ by its completely
+join-irreducible elements, the principal down-sets @davey2002introduction. We
+will not need the strength of Priestley duality and do not use it, but our work
+follows this spectrum: the stages $D_n$ are Birkhoff's case, and the ambient
+object in which we place their limit remains the down-set lattice of a poset,
+the finite intervals of $NN_(>= 1)$, where the correspondence between the poset
+and the completely join-irreducible elements --- now the paths made of a single
+pyramid --- survives unchanged.
+
 #quote(attribution: [Ferrari])[
   Instead of considering a finite total order, one can consider either an infinite (but discrete) total order or a more general partial order.
   In the former case, the combinatorial structure that is involved could be some notion of infinite Dyck path, that is, a Dyck path having infinite length.
@@ -59,6 +224,8 @@ run.
     }),
   ),
 ) <fig:two-models>
+
+
 
 
 = Ambient definitions
@@ -499,24 +666,6 @@ $
   cal(D)_omega = j(cal(D)_colim) union.sq cal(D)_(infinity"-supp").
 $
 
-// (8) record that Model 2 is a stratum, not a subalgebra
-
-#proposition[
-  $cal(D)_(infinity"-supp")$ is an up-set of $cal(D)_omega$, closed
-  under arbitrary joins, but closed under neither binary meets
-  (interleaved combs: $P, Q$ with pyramids at odd resp. even slots
-  have $P and Q = bot$) nor pseudonegation; dually,
-  $j(cal(D)_colim)$ is closed under $or, and, bot$ but not under
-  $tilde$, $arrow.squiggly$, or directed sups
-  ($or.big_n u^n d^n (u d)^omega = u^omega$).
-]
-
-// (9) optional refinement, if you want the conservative reading
-$
-  R(P) = \{ i >= 1 | h_P (2i) = 0 \},
-  wide
-  cal(D)_(infinity"-supp") = underbrace(\{ abs(R(P)) = infinity \}, "recurrent") union.sq underbrace(\{ abs(R(P)) < infinity \}, "transient").
-$
 
 = Unbounded Interval Temporal Logics
 
