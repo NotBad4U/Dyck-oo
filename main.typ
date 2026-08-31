@@ -24,29 +24,23 @@
 
 == Three readings of a Dyck path
 
-The subject of this paper is an interval temporal logic, and Dyck paths are
-the way we draw it. Following @Ferrari2015DyckAI, take a finite linear order of
-time instants $t_1 < dots < t_(n-1)$, identified with the chain
-$[n-1] = \{1, dots, n-1\}$, and evaluate propositions on its intervals --- the
-spans $[i, j]$ of consecutive instants --- rather than on single instants.
-Among these propositions single out the _hereditary_ ones, those whose truth on
-a span passes to every subspan: this is the logic of subintervals, the fragment
-of Halpern--Shoham logic @halpern1991propositional built on the single relation
-"during". A hereditary proposition is known once the intervals on which it
-holds are, and these form a family closed under taking subintervals, that is a
-down-set of the intervals of $[n-1]$ ordered by inclusion. Dyck paths enter as
-the geometric representation of such families, hence of the propositions
-themselves: an interval is drawn as a pyramid, a family of intervals as the
-skyline of its pyramids, and the pointwise order of two drawings is the
-entailment of the propositions they stand for. Everything below is meant to keep
-this reading available once the time line is no longer bounded.
-
+In this work we explore the duality between an interval temporal logic, Dyck paths, and prime filters.
+An interval temporal logic is characterized by the fact that the truth of a
+statement depends on the time interval it is evaluated on (rather than the time instant) @halpern1991propositional.
+Dyck paths enter as the geometric representation of such intervals sharing some algebraic properties with logic of subintervals @Ferrari2015DyckAI.
 The analysis of the finite Dyck lattices in @Ferrari2015DyckAI rests on one
-observation: a finite Dyck path can be read in three ways.
+observation: a finite Dyck path $P$ can be read in three ways.
+
+- A path, an element of the lattice of Dyck paths ordered by geometric
+  inclusion;
+- a down-set named $hat(F)_P$ of intervals of the underlying time line;
+- an antichain of intervals written $A_P$, namely the maximal elements of that down-set.
+
+These are three names for one object.
 Write $D_n$ for the Dyck paths of semilength $n$ ordered by geometric
-inclusion $P <= Q$ when $P$ lies weakly below $Q$. This is a finite
+inclusion $P <= Q$ when $P$ lies weakly below $Q$ @Ferrari2015DyckAI[§ 2]. This is a finite
 distributive lattice, so by Birkhoff's representation theorem @davey2002introduction it is the lattice
-of down-sets of its join-irreducible elements, and those are known: a
+of down-sets of its join-irreducible elements, and those are transposed in Dyck algebra where
 join-irreducible is a path all of whose factors are hills except for a single
 pyramid $u^k d^k$ with $k >= 2$, and it is determined by the interval of atoms
 lying below it. Writing $Int([n-1])$ for the intervals $[i, j]$,
@@ -54,13 +48,11 @@ $1 <= i <= j <= n-1$, of the chain $[n-1]$ ordered by inclusion, this reads
 $
   D_n tilde.equiv cal(O)(Int([n-1])),
 $
-the lattice of down-sets of $Int([n-1])$. A path, a down-set of intervals and
-the antichain of that down-set's maximal elements are three names for one
-object.
+the lattice of down-sets of $Int([n-1])$.
 
 #figure(
   kind: image,
-  placement: top,
+  placement: bottom,
   stack(
     dir: ttb,
     spacing: 1em,
@@ -71,11 +63,11 @@ object.
       inset: (x: 0.8em, y: 0.45em),
       stroke: none,
       table.hline(),
-      table.header([reading], [on $P = u u u d u d d d$], [read off from]),
+      table.header([reading], [$P = u u u d u d d d$], [read off from]),
       table.hline(stroke: 0.5pt),
       [the path $P$],
       dyck-mini("uuududdd", hmax: 4, step: 0.17, hunit: 0.17, marks: ((3, cI), (5, cII))),
-      [the coatom of $D_4$, with peaks above the axis at abscissas
+      [the peaks above the axis at abscissas
         #text(fill: cI)[$3$] and #text(fill: cII)[$5$]],
       table.hline(stroke: 0.3pt + luma(80%)),
       [the antichain $A_P$],
@@ -88,7 +80,7 @@ object.
       table.hline(),
     ),
   ),
-  caption: [The three readings, on the coatom $P = u u u d u d d d$ of $D_4$.],
+  caption: [The three readings of $P = u u u d u d d d in D_4$.],
 ) <fig:triangle>
 
 // We write $hat(F)_P subset.eq Int([n-1])$ for the down-set of $P$ and $A_P$ for its antichain of maximal elements.
@@ -126,12 +118,8 @@ object.
     stroke: none,
     inset: (x: 0.5em, y: 0.28em),
     align: (right, left, right, left, right, left),
-    [$[1,1]$], [$h_P (2) = 2 >= 2$],
-    [$[2,2]$], [$h_P (4) = 2 >= 2$],
-    [$[3,3]$], [$h_P (6) = 2 >= 2$],
-    [$[1,2]$], [$h_P (3) = 3 >= 3$],
-    [$[2,3]$], [$h_P (5) = 3 >= 3$],
-    [$[1,3]$], [$h_P (4) = 2 gt.eq.not 4$],
+    [$[1,1]$], [$h_P (2) = 2 >= 2$], [$[2,2]$], [$h_P (4) = 2 >= 2$], [$[3,3]$], [$h_P (6) = 2 >= 2$],
+    [$[1,2]$], [$h_P (3) = 3 >= 3$], [$[2,3]$], [$h_P (5) = 3 >= 3$], [$[1,3]$], [$h_P (4) = 2 gt.eq.not 4$],
   ))
 
   So $hat(F)_P$ is everything but $[1,3]$, and its maximal elements are
@@ -240,6 +228,43 @@ $
   cal(D)_omega = \{ P = (p_i)_(i in NN) in \{u, d\}^omega mid(|) forall n in NN, h_P (n) >= 0 \}
 $
 
+Only half of the finite condition survives here, and it is worth saying which
+half and why. A finite Dyck word is asked two things: that no prefix dip below
+the axis, and that the last step land back on it. The second speaks about the
+last step, and an infinite word has none, so $cal(D)_omega$ keeps the first
+alone. This is not an arbitrary weakening: it is what the finite notion becomes
+in the limit. A finite word $w$ with no negative prefix is exactly a _prefix_ of a finite
+Dyck word, since appending $d^(h_w (abs(w)))$ closes it off; the definition
+above therefore reads
+$
+  cal(D)_omega = \{ P in \{u, d\}^omega mid(|) forall n in NN, quad
+  p_0 dots.c p_(n-1) "is a prefix of a finite Dyck word" \},
+$
+the infinite branches of the tree of Dyck prefixes. Read the other way round,
+the paths of finite support --- Model 1 seen inside $cal(D)_omega$ --- are dense
+in it: truncating $P$ at time $n$ and closing it off with
+$d^(h_P (n)) (u d)^omega$ gives a path of finite support agreeing with $P$ up to
+$n$. Every infinite path is thus approximated by genuine finite Dyck paths, one
+prefix at a time, and nothing beyond that approximation has been let in.
+
+#remark(number: auto, label: <rem-no-return>)[
+  An infinite Dyck path need not return to the axis. Returning is a feature of
+  the finite case, forced there by the balance condition, and it lapses together
+  with it: the descents a prefix owes are not missing from the path, only
+  postponed, and postponement may go on forever. The extreme case is
+  $top = u^omega$, which never comes back at all, although each of its prefixes
+  $u^n$ is settled by the honest Dyck path $u^n d^n$; a milder one is
+  $u^k (d u)^omega$, which oscillates between heights $k - 1$ and $k$ and never
+  descends further.
+
+  Demanding infinitely many returns instead is possible, but costly. That set is
+  not closed under joins --- @prop-top-chain writes $u^omega$ as the supremum of
+  the chain $u^k d^k (u d)^omega$, every member of which returns infinitely
+  often --- so it is no complete lattice, and Model 2 would lose the top that is
+  the only constant of its logic. The return is a condition on the tail of a
+  path, and the tail is exactly what an unbounded time line declines to fix.
+]
+
 #definition("geometric order")[
   For $P, Q in cal(D)_omega$ set
   $
@@ -260,7 +285,8 @@ consecutive returns (or from the origin to the first return); a hill is also
 called a _trivial factor_. In the finite case every Dyck path is the
 juxtaposition of its factors; here the same holds for the prefix of $P$ up to
 its last return, and a path with infinitely many returns is the juxtaposition of
-infinitely many factors. The atom $pi_i$ are the path
+infinitely many factors; a path with no return at all, $top = u^omega$ being the
+extreme case, has no factors. The atom $pi_i$ are the path
 whose factors are all hills except for a single pyramid $u u d d$.
 
 #definition("limit path")[
@@ -599,6 +625,25 @@ Recall finite Dyck words are constructed with the grammar $S ::= epsilon | u S d
   with $"in" : F(mu F) -> mu F$ the pair of constructors. Its elements are the finite Dyck words before any quotient.
 ]
 
+#remark(number: auto, label: <rem-grammar>)[
+  The grammar is what makes $top = u^omega$ look illegal: no derivation from
+  $S ::= epsilon | u S d S$ produces it. What is true is that no derivation
+  _terminates_ on it, and that is a statement about $mu$, not about the rules.
+  Read as a least fixpoint the grammar gives $mu F$, the words reached in
+  finitely many productions, and $u^omega$ is not one of them. Read as a
+  greatest fixpoint it gives $nu F$, the possibly infinite trees, where a
+  derivation may run forever provided every single step is a legitimate
+  production; and there $u^omega$ is the word of the unique tree $T$ with
+  $T = u T d T$. Expanding the left argument forever emits $u$ after $u$, and the
+  $d$ that each production promises sits behind an infinite word, so it is never
+  reached: every rule is obeyed at every step, only the end of the derivation is
+  missing. Flattening $nu F$ to words yields the finite Dyck words together with
+  all of $cal(D)_omega$. The flattening is not injective --- at a node whose left
+  argument is infinite, the $d$ and the right argument are unreachable and hence
+  invisible in the word --- which is why $cal(D)_omega$ is made of words and not
+  of trees.
+]
+
 Let $sigma : F(NN) -> NN$ be the $F$-algebra $sigma(ast) = 0$ and $sigma(a, b) = a + b + 1$, and set
 $
   ell := "fold"(sigma) : mu F -> NN,
@@ -660,10 +705,134 @@ the unique map counting the uses of the constructor $u (-) d (-)$, i.e. the semi
 
 = Model 2
 
+We restate that model 2 correspond to Dyck paths with infinite support, i.e., Dyck paths unbounded on the right which do not have a suffix consisting of the concatenation of an infinite number of peaks lying on the x-axis ($...u d^omega$).
+
 $
-  cal(D)_(infinity"-supp") = \{ P in cal(D)_omega mid(|) abs(supp(P)) = infinity \},
-  wide
-  cal(D)_omega = j(cal(D)_colim) union.sq cal(D)_(infinity"-supp").
+  cal(D)_(infinity) = \{ P in cal(D)_omega mid(|) abs(supp(P)) = infinity \}
+$
+
+
+// #lemma(label: <lem-supp-mono>)[
+//   $bot <= P$ for every $P in cal(D)_omega$, and
+//   $
+//     P <= Q quad => quad supp(P) subset.eq supp(Q).
+//   $
+//   Hence $cal(D)_infinity$ is an up-set of $cal(D)_omega$.
+// ]
+
+// Since $h_P (n) >= 0$ and $h_P (n) equiv n mod 2$, every odd $n$ has
+// $h_P (n) >= 1 = h_bot (n)$; so $supp(P) = \{ n mid(|) h_P (n) > h_bot (n) \}$,
+// which $h_P <= h_Q$ transports pointwise.
+
+#definition("top path")[
+  $
+    top = u^omega, wide h_top (n) = n, wide
+    supp(top) = NN_(>= 2), wide supp_"at" (top) = NN_(>= 1).
+  $
+]
+
+$
+  top in cal(D)_infinity, wide forall P in cal(D)_infinity, quad P <= top.
+$
+
+After its first step $top$ never meets the axis again: it has no return, hence
+no factor, and the grammar of finite Dyck words does not generate it. It is a
+Dyck path all the same, in the sense fixed by @rem-no-return --- every prefix
+$u^n$ is a prefix of the Dyck path $u^n d^n$, and the descents it owes are
+postponed rather than dropped --- and @rem-grammar says the same on the side of
+the grammar, where $top$ is the word of the tree $T = u T d T$ of $nu F$.
+
+#proposition(label: <prop-top-chain>)[
+  $top$ is the supremum of an increasing chain taken in stratum of Model 1:
+  $
+    top
+    = or.big_(k in NN) underbrace(u^k d^k (u d)^omega, in cal(D)_"fs")
+    = or.big_(k >= 2) underbrace(u^k (d u)^omega, in cal(D)_infinity)
+    = u^omega
+  $
+  both because the $k$-th term has $h(n) = n$ as soon as $k >= n$.
+]
+
+The left chain lies in Model 1 and its supremum does not, which is exactly why
+$cal(D)_1$ has no top; the right chain shows that $top$ is already a join of
+paths of infinite support, so Model 2 does not need Model 1 to name it.
+
+== Join
+
+#proposition[
+  For $I != emptyset$ and $P_i in cal(D)_infinity$,
+  $
+    h_(or.big_(i in I) P_i) (n) = sup_(i in I) h_(P_i) (n),
+    wide
+    supp(or.big_(i in I) P_i) = union.big_(i in I) supp(P_i),
+  $
+  hence $or.big_(i in I) P_i in cal(D)_infinity$; in the binary case
+  $
+    h_(P or Q) (n) = max(h_P (n), h_Q (n)),
+    wide
+    supp(P or Q) = supp(P) union supp(Q).
+  $
+]
+
+$
+  (cal(D)_infinity, <=, or.big, top) = "complete join-semilattice with top".
+$
+
+== Failure of meets
+
+#lemma(label: <lem-empty-supp>)[
+  $supp_"at" (P) = emptyset quad <==> quad P = bot$.
+]
+
+If $h_P (2i) = h_P (2i + 2) = 0$ then $h_P (2i + 1) = 1$, so $h_P = h_bot$.
+
+#example[
+  Split the atoms $pi_i$ into the odd and the even ones:
+  $
+    O = (u u d d)^omega = or.big_(i "odd") pi_i,
+    wide
+    E = u d (u u d d)^omega = or.big_(i "even") pi_i,
+  $
+  $
+    supp_"at" (O) = \{1, 3, 5, dots\},
+    wide
+    supp_"at" (E) = \{2, 4, 6, dots\},
+    wide
+    O, E in cal(D)_infinity.
+  $
+  Their height functions interleave, and the pointwise minimum collapses onto
+  the floor:
+  $
+            h_O & = 0, 1, 2, 1, 0, 1, 2, 1, 0, dots \
+            h_E & = 0, 1, 0, 1, 2, 1, 0, 1, 2, dots \
+    h_(O and E) & = 0, 1, 0, 1, 0, 1, 0, 1, 0, dots = h_bot
+  $
+  $
+    supp_"at" (O and E) = supp_"at" (O) inter supp_"at" (E) = emptyset
+    quad => quad
+    O and E = bot in.not cal(D)_infinity.
+  $
+]
+
+#proposition[
+  $O$ and $E$ have no lower bound at all in $cal(D)_infinity$:
+  $
+    R <= O, quad R <= E quad => quad R <= bot quad => quad
+    R = bot in.not cal(D)_infinity.
+  $
+]
+
+#proposition[
+  $and$ is a partial operation on $cal(D)_infinity$:
+  $
+    supp(P and Q) = supp(P) inter supp(Q),
+    wide
+    P and Q in cal(D)_infinity quad <==> quad abs(supp(P) inter supp(Q)) = infinity.
+  $
+]
+
+$
+  bot in.not cal(D)_infinity, wide cal(D)_infinity "is not a meet-semilattice".
 $
 
 
