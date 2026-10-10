@@ -301,9 +301,10 @@ End Negation.
 
 Definition entails n (φ ψ : form) : Prop := forall I, Int n I -> val φ I -> val ψ I.
 
-(** [φ ⊢[n] ψ]: on [T_n], [ψ] is true wherever [φ] is. This is a semantic
+(** [φ ⊨_n ψ]: on [T_n], [ψ] is true wherever [φ] is. This is a semantic
   consequence: there is no proof system here. *)
-Notation "φ ⊢[ n ] ψ" := (entails n φ ψ) (at level 70, no associativity) : itl_scope.
+Notation "φ ⊨_ n ψ" := (entails n φ ψ)
+  (at level 70, n at level 0, no associativity, format "φ  ⊨_ n  ψ") : itl_scope.
 
 (** Proposition 3.6 of [Ferrari2015DyckAI]: for [φ, ψ ∈ Θ_n],
   [[φ] ⇝ [ψ] = ⋁ { [α] ∈ Θ_n/⟺ | [φ] ∧ [α] ≤ [ψ] }], i.e. [⇝] is the
@@ -311,8 +312,8 @@ Notation "φ ⊢[ n ] ψ" := (entails n φ ψ) (at level 70, no associativity) :
   stated as: [φ ⇝ ψ] belongs to that set, and it lies above every element
   of it, so it is its greatest element, hence its join. *)
 Proposition pimp_rel_pcompl n (φ ψ : Θ n) :
-  φ ∧ (φ ⇝ ψ) ⊢[n] ψ /\
-  forall α : Θ n, φ ∧ α ⊢[n] ψ -> α ⊢[n] φ ⇝ ψ.
+  φ ∧ (φ ⇝ ψ) ⊨_n ψ /\
+  forall α : Θ n, φ ∧ α ⊨_n ψ -> α ⊨_n φ ⇝ ψ.
 Proof.
   split.
   - intros I HI [Hφ H]; exact (H I (Int_self n I HI) Hφ).

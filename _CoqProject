@@ -1,7 +1,13 @@
 -R theories Dyck
 
 theories/Lattice.v
-theories/Dyck.v
-theories/Words.v
-theories/HeytingDyck.v
-theories/ITLn.v
+theories/Algebra/Dyck.v
+theories/Algebra/Words.v
+theories/Algebra/HeytingDyck.v
+theories/Algebra/DyckOmega.v
+theories/Algebra/DyckFs.v
+theories/Algebra/DyckInf.v
+theories/Logic/ITLn.v
+theories/Logic/ITLω.v
+theories/Logic/ITLfs.v
+theories/Logic/ITLinf.v
