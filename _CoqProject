@@ -5,4 +5,3 @@ theories/Dyck.v
 theories/Words.v
 theories/HeytingDyck.v
 theories/ITLn.v
-theories/DyckITLn.v

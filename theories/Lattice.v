@@ -1,3 +1,4 @@
+(** * Lattice interface and theory based on Setoid relation *)
 From Stdlib Require Import RelationClasses Morphisms Setoid.
 
 Class Poset (X : Type) := {

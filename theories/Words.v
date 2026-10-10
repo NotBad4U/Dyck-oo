@@ -3,24 +3,23 @@
   Section "Ambient definitions"
   
 *)
-
 From Stdlib Require Import Arith Bool Lia List.
 Import Nat.
 From Dyck Require Import Dyck.
 Import ListNotations EqNotations FinitePath.
 
-(** ** Reading a derivation as a word *)
-
+(** Reading a dyck path as a [word: list step] *)
 Fixpoint word {n} (P : Dyck n) : list step :=
   match P with
   | eps => []
   | ud A B => U :: word A ++ D :: word B
   end.
 
-(** [nU w] and [nD w] count the up and the down steps of [w]. *)
+(* cardinality of up steps in [w] *)
 Fixpoint nU (w : list step) : nat :=
   match w with [] => 0 | U :: w' => S (nU w') | D :: w' => nU w' end.
 
+(* cardinality of down steps in [w] *)
 Fixpoint nD (w : list step) : nat :=
   match w with [] => 0 | U :: w' => nD w' | D :: w' => S (nD w') end.
 
@@ -33,9 +32,8 @@ Proof. induction w1 as [|[] w1 IH]; simpl; lia. Qed.
 Lemma nU_nD_length w : nU w + nD w = length w.
 Proof. induction w as [|[] w IH]; simpl; lia. Qed.
 
-(** ** [word P] is a finite Dyck word *)
+(** [word P] is a finite Dyck word *)
 
-(** Balance: [n] up steps and [n] down steps, so the word ends on the axis. *)
 Lemma nU_word {n} (P : Dyck n) : nU (word P) = n.
 Proof.
   induction P as [|m k A IHA B IHB]; simpl; [reflexivity|].
@@ -51,7 +49,7 @@ Qed.
 Lemma length_word {n} (P : Dyck n) : length (word P) = 2 * n.
 Proof. rewrite <- nU_nD_length, nU_word, nD_word; lia. Qed.
 
-(** No prefix dips below the axis. *)
+(** No prefix goes below the axis. *)
 Lemma word_prefix {n} (P : Dyck n) i :
   nD (firstn i (word P)) <= nU (firstn i (word P)).
 Proof.
@@ -63,16 +61,10 @@ Proof.
     rewrite nU_word, nD_word; specialize (IHB j); lia.
 Qed.
 
-(** ** The paper's height
-
-  [height2 P i = |{j < i | p_j = u}| - |{j < i | p_j = d}|], counted on the
-  first [i] steps of the word of [P]. The subtraction in [nat] is exact
-  because no prefix dips below the axis ([word_prefix]). *)
+(* Another approach to define the height function than the one in Dyck.v *)
 Definition height2 {n} (P : Dyck n) i := nU (firstn i (word P)) - nD (firstn i (word P)).
 
-(** [height] and [height2] agree. In [u A d B], with [A] of semilength [m]:
-  the first [j ≤ 2m] steps after the opening [u] are a prefix of [A]; past
-  them, [u A d] has as many [u] as [d] and the count goes on in [B]. *)
+(* The height function defined via the word and height in Dyck.v are equal *)
 Lemma height_height2 {n} (P : Dyck n) i : height P i = height2 P i.
 Proof.
   unfold height2; revert i; induction P as [|m k A IHA B IHB]; intros [|j];
@@ -88,23 +80,26 @@ Proof.
     rewrite IHB; lia.
 Qed.
 
-(** ** Parsing a word back into a derivation
+(** Infinite paths as words *)
+Definition prefixω (P : InfinitePath.Dyckω) (n : nat) : list step := firstn n (word (InfinitePath.stage P n)).
 
-  Read right to left, a word is parsed by a stack machine: [D] pushes the
-  empty derivation, and [U] pops [A] then [B] and pushes [ud A B]. This is a
-  right fold, so every derivation is recovered from its word ([parse_word]),
-  and every Dyck word is the word of a derivation ([word_parse]). *)
+Lemma heightω_count (P : InfinitePath.Dyckω) n :
+  InfinitePath.height P n = nU (prefixω P n) - nD (prefixω P n).
+Proof. apply height_height2. Qed.
 
-Definition stack := list {m & Dyck m}.
+Lemma prefixω_nonneg (P : InfinitePath.Dyckω) n : nD (prefixω P n) <= nU (prefixω P n).
+Proof. apply word_prefix. Qed.
 
-Definition push (s : step) (st : stack) : stack :=
+Definition μF := list {m & Dyck m}.
+
+Definition push (s : step) (st : μF) : μF :=
   match s, st with
   | D, _ => existT _ 0 eps :: st
   | U, A :: B :: st' => existT _ _ (ud (projT2 A) (projT2 B)) :: st'
   | U, _ => st
   end.
 
-Definition run (w : list step) : stack := fold_right push [existT _ 0 eps] w.
+Definition run (w : list step) : μF := fold_right push [existT _ 0 eps] w.
 
 Lemma foldr_push_word {n} (P : Dyck n) st :
   fold_right push (existT _ 0 eps :: st) (word P) = existT _ n P :: st.
@@ -113,7 +108,6 @@ Proof.
   rewrite fold_right_app; simpl; rewrite IHB, IHA; reflexivity.
 Qed.
 
-(** A semilength comparison whose proof computes, so that [parse] reduces. *)
 Fixpoint nat_eqo (m n : nat) : option (m = n) :=
   match m, n return option (m = n) with
   | 0, 0 => Some Logic.eq_refl
@@ -153,8 +147,8 @@ Proof.
   injection H as <-; exact E.
 Qed.
 
-(** The words of the stack, separated by the [D]s still waiting for their [U]. *)
-Fixpoint unparse (st : stack) : list step :=
+(** The words of the μF, separated by the [D]s still waiting for their [U]. *)
+Fixpoint unparse (st : μF) : list step :=
   match st with
   | [] => []
   | t :: st' =>
@@ -212,8 +206,8 @@ Proof.
   lia.
 Qed.
 
-Lemma word_parse {n} (d : Dyck n) w :
-  dyck_word n w -> word (match parse n w with Some P => P | None => d end) = w.
+Lemma word_parse {n} (dflt : Dyck n) w :
+  dyck_word n w -> word (match parse n w with Some P => P | None => dflt end) = w.
 Proof.
   intros [Hlen [HU Hpre]].
   assert (HD : nD w = n) by (pose proof (nU_nD_length w); lia).
@@ -260,20 +254,6 @@ Proof.
     rewrite ?up_nil, ?up0, ?up_U, ?up_D; try specialize (IH i); lia.
 Qed.
 
-Lemma up_step w i : up w i <= up w (S i) <= S (up w i).
-Proof.
-  revert i; induction w as [|[] w IH]; intros [|i];
-    rewrite ?up_nil, ?up0, ?up_U, ?up_D, ?up0; try specialize (IH i); lia.
-Qed.
-
-Lemma up_min w i : up w (min i (length w)) = up w i.
-Proof.
-  destruct (le_ge_cases i (length w)) as [le|le].
-  - now rewrite min_l.
-  - rewrite min_r by exact le.
-    rewrite (up_all w (length w)), (up_all w i) by lia; reflexivity.
-Qed.
-
 Lemma eq_from_up w1 w2 :
   length w1 = length w2 -> (forall i, up w1 i = up w2 i) -> w1 = w2.
 Proof.
@@ -285,124 +265,105 @@ Proof.
   intros i; specialize (Hup (S i)); destruct s1; rewrite ?up_U, ?up_D in Hup; lia.
 Qed.
 
-(** *** Words with a given profile *)
+(** *** [min] and [max] of two words computed with their heights.
 
-Section OfUp.
+  [P ∧ Q] and [P ∨ Q] are the paths whose heights are the pointwise [min]
+  and [max] of [h_P] and [h_Q].  
+*)
 
-Variable f : nat -> nat.
-Hypothesis f_step : forall i, f i <= f (S i) <= S (f i).
+(* 
+  bump U a = S a  -- one more up step read 
+  bump D a = a   -- a down step doesn't change the count
+*)
+Definition bump (s : step) (a : nat) : nat := match s with U => S a | D => a end.
 
-(** The word of length [n] whose profile, from position [i] on, follows [f]. *)
-Fixpoint of_up (i n : nat) : list step :=
-  match n with
-  | 0 => []
-  | S n' => (if f i <? f (S i) then U else D) :: of_up (S i) n'
+Fixpoint minw (w1 w2 : list step) (a1 a2 : nat) : list step :=
+  match w1, w2 with
+  | s1 :: w1', s2 :: w2' =>
+      (if min a1 a2 <? min (bump s1 a1) (bump s2 a2) then U else D)
+        :: minw w1' w2' (bump s1 a1) (bump s2 a2)
+  | _, _ => []
   end.
 
-Lemma length_of_up i n : length (of_up i n) = n.
+Fixpoint maxw (w1 w2 : list step) (a1 a2 : nat) : list step :=
+  match w1, w2 with
+  | s1 :: w1', s2 :: w2' =>
+      (if max a1 a2 <? max (bump s1 a1) (bump s2 a2) then U else D)
+        :: maxw w1' w2' (bump s1 a1) (bump s2 a2)
+  | _, _ => []
+  end.
+
+Lemma up_bump s w j : up (s :: w) (S j) = bump s (up w j).
+Proof. destruct s; [apply up_U|apply up_D]. Qed.
+
+Lemma length_minw w1 w2 a1 a2 : length w1 = length w2 -> length (minw w1 w2 a1 a2) = length w1.
 Proof.
-  revert i; induction n as [|n IH]; intros i; simpl; [reflexivity|].
-  now rewrite IH.
+  revert w2 a1 a2; induction w1 as [|s1 w1 IH]; intros [|s2 w2] a1 a2 Hlen;
+    simpl in Hlen; try discriminate Hlen; [reflexivity|].
+  cbn [minw length]; f_equal; apply IH; lia.
 Qed.
 
-Lemma f_mono i j : i <= j -> f i <= f j.
+Lemma length_maxw w1 w2 a1 a2 : length w1 = length w2 -> length (maxw w1 w2 a1 a2) = length w1.
 Proof.
-  induction j as [|j IH]; intros le.
-  - replace i with 0 by lia; lia.
-  - destruct (eq_dec i (S j)) as [->|ne]; [lia|].
-    specialize (IH ltac:(lia)); pose proof (f_step j); lia.
+  revert w2 a1 a2; induction w1 as [|s1 w1 IH]; intros [|s2 w2] a1 a2 Hlen;
+    simpl in Hlen; try discriminate Hlen; [reflexivity|].
+  cbn [maxw length]; f_equal; apply IH; lia.
 Qed.
 
-Lemma up_of_up i n j : up (of_up i n) j = f (i + min j n) - f i.
+Lemma up_minw w1 w2 a1 a2 i : length w1 = length w2 ->
+  up (minw w1 w2 a1 a2) i + min a1 a2 = min (a1 + up w1 i) (a2 + up w2 i).
 Proof.
-  revert i j; induction n as [|n IH]; intros i [|j];
-    try (simpl; rewrite add_0_r, sub_diag; reflexivity).
-  replace (i + min (S j) (S n)) with (S i + min j n) by lia.
-  pose proof (f_step i); pose proof (f_mono (S i) (S i + min j n) ltac:(lia)).
-  simpl of_up; destruct (ltb_spec (f i) (f (S i))); cbv iota;
-    rewrite ?up_U, ?up_D, IH; lia.
+  revert w2 a1 a2 i; induction w1 as [|s1 w1 IH]; intros [|s2 w2] a1 a2 i Hlen;
+    simpl in Hlen; try discriminate Hlen; cbn [minw].
+  - rewrite !up_nil; lia.
+  - destruct i as [|j]; [rewrite !up0; lia|].
+    rewrite !up_bump; specialize (IH w2 (bump s1 a1) (bump s2 a2) j ltac:(lia)).
+    destruct (ltb_spec (min a1 a2) (min (bump s1 a1) (bump s2 a2)));
+      destruct s1, s2; cbn [bump] in *; lia.
 Qed.
 
-End OfUp.
-
-(** *** Pointwise operations on profiles
-
-  Taking the pointwise [min] (or [max]) of two profiles gives a profile
-  again, since the result still rises by [0] or [1] at each step. [opw op]
-  is the word with that profile. *)
-
-Section Pointwise.
-
-Variable op : nat -> nat -> nat.
-Hypothesis op_mono : forall a b c d, a <= c -> b <= d -> op a b <= op c d.
-Hypothesis op_succ : forall a b, op (S a) (S b) = S (op a b).
-Hypothesis op_sel : forall a b, op a b = a \/ op a b = b.
-
-Definition opw (w1 w2 : list step) : list step :=
-  of_up (fun i => op (up w1 i) (up w2 i)) 0 (length w1).
-
-Lemma length_opw w1 w2 : length (opw w1 w2) = length w1.
-Proof. apply length_of_up. Qed.
-
-Lemma op_idem a : op a a = a.
-Proof. now destruct (op_sel a a). Qed.
-
-Lemma op_step w1 w2 i :
-  op (up w1 i) (up w2 i) <= op (up w1 (S i)) (up w2 (S i)) <=
-  S (op (up w1 i) (up w2 i)).
+Lemma up_maxw w1 w2 a1 a2 i : length w1 = length w2 ->
+  up (maxw w1 w2 a1 a2) i + max a1 a2 = max (a1 + up w1 i) (a2 + up w2 i).
 Proof.
-  destruct (up_step w1 i), (up_step w2 i); split.
-  - now apply op_mono.
-  - rewrite <- op_succ; now apply op_mono.
+  revert w2 a1 a2 i; induction w1 as [|s1 w1 IH]; intros [|s2 w2] a1 a2 i Hlen;
+    simpl in Hlen; try discriminate Hlen; cbn [maxw].
+  - rewrite !up_nil; lia.
+  - destruct i as [|j]; [rewrite !up0; lia|].
+    rewrite !up_bump; specialize (IH w2 (bump s1 a1) (bump s2 a2) j ltac:(lia)).
+    destruct (ltb_spec (max a1 a2) (max (bump s1 a1) (bump s2 a2)));
+      destruct s1, s2; cbn [bump] in *; lia.
 Qed.
 
-Lemma up_opw w1 w2 i :
-  length w1 = length w2 -> up (opw w1 w2) i = op (up w1 i) (up w2 i).
-Proof.
-  intros Hlen; unfold opw; rewrite up_of_up by (intros k; apply op_step).
-  rewrite !up0, op_idem, sub_0_r, add_0_l, up_min, Hlen, up_min.
-  reflexivity.
-Qed.
-
-Lemma dyck_word_opw n w1 w2 :
-  dyck_word n w1 -> dyck_word n w2 -> dyck_word n (opw w1 w2).
+Lemma dyck_word_minw n w1 w2 :
+  dyck_word n w1 -> dyck_word n w2 -> dyck_word n (minw w1 w2 0 0).
 Proof.
   intros [len1 [U1 P1]] [len2 [U2 P2]].
   assert (Hlen : length w1 = length w2) by lia.
-  split; [now rewrite length_opw|split].
-  - rewrite <- (up_all (opw w1 w2) (length w1)) by (rewrite length_opw; lia).
-    rewrite up_opw by exact Hlen.
-    rewrite (up_all w1), (up_all w2) by lia.
-    rewrite U1, U2; apply op_idem.
-  - intros i; rewrite up_opw by exact Hlen.
-    rewrite length_firstn, length_opw.
-    specialize (P1 i); specialize (P2 i); rewrite length_firstn in P1, P2.
-    destruct (op_sel (up w1 i) (up w2 i)) as [-> | ->]; lia.
+  pose proof (length_minw w1 w2 0 0 Hlen) as Hl.
+  split; [lia|split].
+  - rewrite <- (up_all (minw w1 w2 0 0) (length w1)) by lia.
+    pose proof (up_minw w1 w2 0 0 (length w1) Hlen) as H.
+    rewrite (up_all w1 (length w1)), (up_all w2 (length w1)) in H by lia; lia.
+  - intros i; pose proof (up_minw w1 w2 0 0 i Hlen).
+    rewrite length_firstn, Hl.
+    specialize (P1 i); specialize (P2 i); rewrite length_firstn in P1, P2; lia.
 Qed.
 
-End Pointwise.
+Lemma dyck_word_maxw n w1 w2 :
+  dyck_word n w1 -> dyck_word n w2 -> dyck_word n (maxw w1 w2 0 0).
+Proof.
+  intros [len1 [U1 P1]] [len2 [U2 P2]].
+  assert (Hlen : length w1 = length w2) by lia.
+  pose proof (length_maxw w1 w2 0 0 Hlen) as Hl.
+  split; [lia|split].
+  - rewrite <- (up_all (maxw w1 w2 0 0) (length w1)) by lia.
+    pose proof (up_maxw w1 w2 0 0 (length w1) Hlen) as H.
+    rewrite (up_all w1 (length w1)), (up_all w2 (length w1)) in H by lia; lia.
+  - intros i; pose proof (up_maxw w1 w2 0 0 i Hlen).
+    rewrite length_firstn, Hl.
+    specialize (P1 i); specialize (P2 i); rewrite length_firstn in P1, P2; lia.
+Qed.
 
-Lemma min_mono a b c d : a <= c -> b <= d -> min a b <= min c d.
-Proof. intros; lia. Qed.
-
-Lemma max_mono a b c d : a <= c -> b <= d -> max a b <= max c d.
-Proof. intros; lia. Qed.
-
-Lemma min_succ a b : min (S a) (S b) = S (min a b).
-Proof. lia. Qed.
-
-Lemma max_succ a b : max (S a) (S b) = S (max a b).
-Proof. lia. Qed.
-
-Lemma min_sel a b : min a b = a \/ min a b = b.
-Proof. lia. Qed.
-
-Lemma max_sel a b : max a b = a \/ max a b = b.
-Proof. lia. Qed.
-
-(** ** Heights are read on words *)
-
-(** No prefix of a path dips below the axis: [2 * up ≥ i]. *)
 Lemma up_double {n} (P : Dyck n) i : i <= 2 * n -> i <= 2 * up (word P) i.
 Proof.
   intros lei; destruct (dyck_word_word P) as [Hlen [_ Hpre]].
@@ -415,7 +376,6 @@ Proof.
   rewrite length_word; exact le.
 Qed.
 
-(** The height after [i] steps is [2 * up - i]. *)
 Lemma h_up {n} (P : Dyck n) i : height P i = 2 * up (word P) i - i.
 Proof.
   revert i; induction P as [|m k A IHA B IHB]; intros [|j];
@@ -429,15 +389,12 @@ Proof.
     rewrite nU_word, IHB; lia.
 Qed.
 
-(** ** What the lattice uses *)
-
 Lemma word_inj {n} (P Q : Dyck n) : word P = word Q -> P = Q.
 Proof.
   intros E; apply (f_equal (parse n)) in E.
   rewrite !parse_word in E; now injection E.
 Qed.
 
-(** [Dyck n] has a decidable equality: compare the words. *)
 Definition eqD {n} (P Q : Dyck n) : bool :=
   if list_eq_dec step_eq_dec (word P) (word Q) then true else false.
 
@@ -460,29 +417,25 @@ Proof.
 Qed.
 
 Definition meetD {n} (P Q : Dyck n) : Dyck n :=
-  match parse n (opw min (word P) (word Q)) with Some R => R | None => P end.
+  match parse n (minw (word P) (word Q) 0 0) with Some R => R | None => P end.
 
 Definition joinD {n} (P Q : Dyck n) : Dyck n :=
-  match parse n (opw max (word P) (word Q)) with Some R => R | None => P end.
+  match parse n (maxw (word P) (word Q) 0 0) with Some R => R | None => P end.
 
 Lemma up_meetD {n} (P Q : Dyck n) i :
   up (word (meetD P Q)) i = min (up (word P) i) (up (word Q) i).
 Proof.
   unfold meetD; rewrite word_parse.
-  - apply up_opw; [exact min_mono|exact min_succ|exact min_sel|].
-    now rewrite !length_word.
-  - apply dyck_word_opw; [exact min_mono|exact min_succ|exact min_sel|..];
-      apply dyck_word_word.
+  - pose proof (up_minw (word P) (word Q) 0 0 i ltac:(now rewrite !length_word)); lia.
+  - apply dyck_word_minw; apply dyck_word_word.
 Qed.
 
 Lemma up_joinD {n} (P Q : Dyck n) i :
   up (word (joinD P Q)) i = max (up (word P) i) (up (word Q) i).
 Proof.
   unfold joinD; rewrite word_parse.
-  - apply up_opw; [exact max_mono|exact max_succ|exact max_sel|].
-    now rewrite !length_word.
-  - apply dyck_word_opw; [exact max_mono|exact max_succ|exact max_sel|..];
-      apply dyck_word_word.
+  - pose proof (up_maxw (word P) (word Q) 0 0 i ltac:(now rewrite !length_word)); lia.
+  - apply dyck_word_maxw; apply dyck_word_word.
 Qed.
 
 Lemma h_meetD {n} (P Q : Dyck n) i : height (meetD P Q) i = min (height P i) (height Q i).
@@ -491,11 +444,7 @@ Proof. rewrite !h_up, up_meetD; lia. Qed.
 Lemma h_joinD {n} (P Q : Dyck n) i : height (joinD P Q) i = max (height P i) (height Q i).
 Proof. rewrite !h_up, up_joinD; lia. Qed.
 
-(** ** [D_n] is finite
-
-  [enumD n] lists the paths of [D_n], each exactly once: the words of
-  length [2n] that parse. *)
-
+(** Lists all 2^k Dyck words of length k *)
 Fixpoint words k : list (list step) :=
   match k with
   | 0 => [[]]
@@ -531,10 +480,14 @@ Proof.
     discriminate E.
 Qed.
 
+(** Dyck path as words are enumerable *)
+
+(* Return  a list that contains every path of Dₙ *)
 Definition enumD n : list (Dyck n) :=
   flat_map (fun w => match parse n w with Some P => [P] | None => [] end)
     (words (2 * n)).
 
+(* Enumerable *)
 Lemma mem_enumD {n} (P : Dyck n) : In P (enumD n).
 Proof.
   apply in_flat_map; exists (word P); split.
@@ -542,6 +495,7 @@ Proof.
   - rewrite parse_word; now left.
 Qed.
 
+(* No duplicate *)
 Lemma NoDup_enumD n : NoDup (enumD n).
 Proof.
   unfold enumD; induction (NoDup_words (2 * n)) as [|w W nin _ IH]; simpl;

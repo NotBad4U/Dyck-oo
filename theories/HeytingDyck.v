@@ -136,46 +136,35 @@ Qed.
 #[export] Instance Dyck_RelPseudoComplement n : RelPseudoComplement (Dyck n) :=
   {| himp := @impD n; himpP := @impDP n |}.
 
-Lemma himpE {n} (P Q : Dyck n) : P ↛ Q = impD P Q.
-Proof. reflexivity. Qed.
+Section ExampleD4.
+
+Import DyckSyntax.
 
 (** ** Example: the Dyck lattice [D₄]
 
   The figure "The Dyck lattice [D₄], drawn in the geometric order" of the
-  paper, every path written as its word. *)
+  paper, every path written as its word. Its Hasse diagram, graded by the
+  area under the path:
 
-Definition ltDb {n} (P Q : Dyck n) : bool := negb (eqD Q P) && leDb P Q.
+<<
+                     uuuudddd                 ⊤ = u⁴d⁴
+                         |
+                     uuududdd
+                    /        \
+            uuduuddd          uuuddudd
+           /        \        /        \
+   uduuuddd          uudududd          uuudddud
+       |      \      /   |   \      /      |
+   uduududd          uudduudd          uududdud
+       |   \      /      |      \      /   |
+       |     \  /        |        \  /     |
+       |      /\         |         /\      |
+   ududuudd          uduuddud          uuddudud
+            \            |            /
+                     udududud                 ⊥ = (ud)⁴
+>>
+*)
 
-(** [Q] covers [P]: [P < Q] with nothing strictly in between. Quantifying
-  over the explicit enumeration [enumD n] keeps it computable. *)
-Definition covers {n} (P Q : Dyck n) : bool :=
-  ltDb P Q && forallb (fun R => negb (ltDb P R && ltDb R Q)) (enumD n).
-
-Lemma covers_spec {n} (P Q : Dyck n) :
-  covers P Q = true <->
-  ltDb P Q = true /\ forall R, ltDb P R && ltDb R Q = false.
-Proof.
-  unfold covers; rewrite andb_true_iff, forallb_forall.
-  split; intros [PQ H]; split; try exact PQ.
-  - intros R; apply negb_true_iff, H, mem_enumD.
-  - intros R _; apply negb_true_iff, H.
-Qed.
-
-(** A list of paths contains another one when it contains each of its paths,
-  which is decided by comparing words. *)
-Lemma inclD {n} (s1 s2 : list (Dyck n)) :
-  forallb (fun P => existsb (eqD P) s2) s1 = true -> incl s1 s2.
-Proof.
-  rewrite forallb_forall; intros H P HP.
-  apply H, existsb_exists in HP as [Q [inQ EQ]].
-  apply eqD_spec in EQ; subst Q; exact inQ.
-Qed.
-
-(* Section D4.
-
-Import DyckSyntax.
-
-(** The fourteen paths of [D₄], from bottom to top as in the figure. *)
 Definition D4 : list (Dyck 4) :=
   [u d u d u d u d;
    u d u d u u d d;
@@ -192,60 +181,17 @@ Definition D4 : list (Dyck 4) :=
    u u u d u d d d;
    u u u u d d d d].
 
-
-(** They are all of [D₄], each exactly once. *)
-Lemma D4_enum : Permutation D4 (enumD 4).
-Proof.
-  assert (incl1 : incl (enumD 4) D4) by (apply inclD; vm_compute; reflexivity).
-  apply NoDup_Permutation.
-  - apply (NoDup_incl_NoDup (NoDup_enumD 4)); [|exact incl1].
-    apply leb_le; vm_compute; reflexivity.
-  - apply NoDup_enumD.
-  - intros P; split; intros _; [apply mem_enumD|apply incl1, mem_enumD].
-Qed.
-
-(** [enumD 4] has no repetition, so this is the cardinal of [D₄]. *)
 Lemma card_D4 : length (enumD 4) = 14.
-Proof. vm_compute; reflexivity. Qed.
+Proof. reflexivity. Qed.
 
-(** [⊥₄ = (ud)⁴] and [⊤₄ = u⁴d⁴]. *)
+(* [⊥₄ = (ud)⁴] *)
 Lemma D4_bot : ⊥ = u d u d u d u d :> Dyck 4.
 Proof. reflexivity. Qed.
 
+(* [⊤₄ = u⁴d⁴] *)
 Lemma D4_top : ⊤ = u u u u d d d d :> Dyck 4.
 Proof. apply eqD_spec; vm_compute; reflexivity. Qed.
 
-(** The edges of the figure, each from the lower to the upper path. *)
-Definition D4_edges : list (Dyck 4 * Dyck 4) :=
-  [(u d u d u d u d, u u d d u d u d);
-   (u d u d u d u d, u d u u d d u d);
-   (u d u d u d u d, u d u d u u d d);
-   (u d u d u u d d, u u d d u u d d);
-   (u d u d u u d d, u d u u d u d d);
-   (u d u u d d u d, u u d u d d u d);
-   (u d u u d d u d, u d u u d u d d);
-   (u u d d u d u d, u u d u d d u d);
-   (u u d d u d u d, u u d d u u d d);
-   (u d u u d u d d, u u d u d u d d);
-   (u d u u d u d d, u d u u u d d d);
-   (u u d d u u d d, u u d u d u d d);
-   (u u d u d d u d, u u u d d d u d);
-   (u u d u d d u d, u u d u d u d d);
-   (u d u u u d d d, u u d u u d d d);
-   (u u d u d u d d, u u u d d u d d);
-   (u u d u d u d d, u u d u u d d d);
-   (u u u d d d u d, u u u d d u d d);
-   (u u d u u d d d, u u u d u d d d);
-   (u u u d d u d d, u u u d u d d d);
-   (u u u d u d d d, u u u u d d d d)].
-
-
-(** The Hasse diagram of the figure is exactly the covering relation of [D₄]. *)
-(* Lemma D4_hasse : forall P Q : Dyck 4, covers P Q = true <-> In (P, Q) D4_edges. *)
-
-(** [D₄] is a Heyting algebra but not a Boolean one: the pseudo-complement
-  of [u u d d u d u d] (the interval [[1,1]] in the paper's table) is
-  [u d u u u d d d] (the interval [[2,3]]), and their join is not [⊤]. *)
 Lemma D4_hneg : ¬ (u u d d u d u d) = u d u u u d d d :> Dyck 4.
 Proof. apply eqD_spec; vm_compute; reflexivity. Qed.
 
@@ -255,4 +201,4 @@ Proof.
   vm_compute in E; discriminate E.
 Qed.
 
-End D4. *)
+End ExampleD4.
