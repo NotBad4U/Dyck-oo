@@ -397,7 +397,8 @@ Proof.
 Defined.
 
 #[export] Instance Θcls_Lattice n : Lattice (Θcls n) :=
-  {| lat_Poset := Θcls_Poset n; lat_Meet := Θcls_Meet n; lat_Join := Θcls_Join n |}.
+  {| lat_JoinSemilattice := {| jsl_Join := Θcls_Join n |};
+     lat_MeetSemilattice := {| msl_Meet := Θcls_Meet n |} |}.
 
 (** [[Θ_n]] is a Heyting algebra. *)
 #[export] Instance Θcls_HeytingAlgebra n : HeytingAlgebra (Θcls n) :=

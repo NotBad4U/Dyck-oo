@@ -43,9 +43,12 @@ Definition top_inf : 𝒟_∞ := exist _ uω uω_infinite.
 Definition join_inf (P Q : 𝒟_∞) : 𝒟_∞ :=
   exist _ (joinω P Q) (infinite_supp_joinω P Q (proj2_sig P)).
 
-(** [𝒟_∞] is a join-semilattice with top. *)
 #[export] Instance Dyck_inf_Join : Join 𝒟_∞ :=
   {| join := join_inf; leUx := fun P Q R => leUxω P Q R |}.
+
+(** [𝒟_∞] is a join-semilattice with top. *)
+#[export] Instance Dyck_inf_JoinSemilattice : JoinSemilattice 𝒟_∞ :=
+  {| jsl_Join := Dyck_inf_Join |}.
 
 (** ** [∧] is not closed: [O = (uudd)^ω] and [E = ud (uudd)^ω]
 

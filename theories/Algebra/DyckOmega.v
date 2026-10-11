@@ -91,7 +91,8 @@ Proof.
 Qed.
 
 #[export] Instance Dyckω_Lattice : Lattice Dyckω :=
-  {| lat_Poset := Dyckω_Poset; lat_Meet := Dyckω_Meet; lat_Join := Dyckω_Join |}.
+  {| lat_JoinSemilattice := {| jsl_Join := Dyckω_Join |};
+     lat_MeetSemilattice := {| msl_Meet := Dyckω_Meet |} |}.
 
 (** ** Support of a meet and of a join
 

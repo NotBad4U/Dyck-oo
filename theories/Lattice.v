@@ -37,18 +37,13 @@ Notation "⊤" := top : lattice_scope.
 Class Distributive X {P : Poset X} {M : Meet X} {J : Join X} :=
   meetUr : forall x y z, x ⊓ (y ⊔ z) ≡ x ⊓ y ⊔ x ⊓ z.
 
-(** The relative pseudo-complement [x ↛ y], or pseudo-implication: the
-  largest [z] with [x ⊓ z ≤ y]. A Heyting algebra is a bounded lattice with
-  relative pseudo-complements. *)
 Class RelPseudoComplement X {P : Poset X} {M : Meet X} := {
   himp : X -> X -> X;
   himpP : forall x y z, x ⊓ z ≤ y <-> z ≤ himp x y
 }.
 
-Notation "x ↛ y" := (himp x y) (at level 60, right associativity) : lattice_scope.
+Notation "x ⟿ y" := (himp x y) (at level 60, right associativity) : lattice_scope.
 
-(** The pseudo-complement [¬ x], or pseudo-negation of [x]: the largest [z]
-  with [x ⊓ z ≤ ⊥]. *)
 Class PseudoComplement X {P : Poset X} {M : Meet X} {B : Bot X} := {
   pneg : X -> X;
   pnegP : forall x z, x ⊓ z ≤ ⊥ <-> z ≤ pneg x
@@ -56,25 +51,20 @@ Class PseudoComplement X {P : Poset X} {M : Meet X} {B : Bot X} := {
 
 Notation "¬ x" := (pneg x) (at level 35, right associativity) : lattice_scope.
 
-(** Relative pseudo-complements give pseudo-complements: [¬ x = x ↛ ⊥]. *)
 #[export] Instance RelPseudoComplement_PseudoComplement {X : Type} {P : Poset X}
   {M : Meet X} {R : RelPseudoComplement X} {B : Bot X} : PseudoComplement X :=
-  {| pneg x := x ↛ ⊥; pnegP x z := himpP x ⊥ z |}.
+  {| pneg x := x ⟿ ⊥; pnegP x z := himpP x ⊥ z |}.
 
-(** ** Bundles
+Class JoinSemilattice X {P : Poset X} := { jsl_Join :: Join X }.
 
-  The classes above stay separate, so that a carrier states exactly the
-  structure it has: a model may lack a top, a bottom or a meet. When the
-  pieces are all there, these bundles name the combination; their fields
-  are instances, so a bundle provides each piece. *)
+Class MeetSemilattice X {P : Poset X} := { msl_Meet :: Meet X }.
 
-Class Lattice X := {
-  lat_Poset :: Poset X;
-  lat_Meet :: Meet X;
-  lat_Join :: Join X
+Class Lattice X {P : Poset X} := {
+  lat_JoinSemilattice :: JoinSemilattice X;
+  lat_MeetSemilattice :: MeetSemilattice X
 }.
 
-Class HeytingAlgebra X := {
+Class HeytingAlgebra X {P : Poset X} := {
   ha_Lattice :: Lattice X;
   ha_Bot :: Bot X;
   ha_Top :: Top X;
@@ -225,7 +215,6 @@ Context {D : Distributive X}.
 Lemma meetUr_le (x y z : X) : x ⊓ (y ⊔ z) ≤ x ⊓ y ⊔ x ⊓ z.
 Proof. exact (proj1 (proj1 (po_eqE _ _) (meetUr x y z))). Qed.
 
-(** The dual law: [⊔] distributes over [⊓]. *)
 Lemma joinIr (x y z : X) : x ⊔ (y ⊓ z) ≡ (x ⊔ y) ⊓ (x ⊔ z).
 Proof.
   apply le_anti.
@@ -247,12 +236,10 @@ Section RelPseudoComplementTheory.
 
 Context {X : Type} {P : Poset X} {M : Meet X} {R : RelPseudoComplement X}.
 
-(** Modus ponens. *)
-Lemma meet_himp (x y : X) : x ⊓ (x ↛ y) ≤ y.
+Lemma meet_himp (x y : X) : x ⊓ (x ⟿ y) ≤ y.
 Proof. apply himpP, lexx. Qed.
 
-(** [x ↛ y] is the join of [{ z | x ⊓ z ≤ y }], being its greatest element. *)
-Lemma himp_is_sup (x y : X) : is_sup (fun z => x ⊓ z ≤ y) (x ↛ y).
+Lemma himp_is_sup (x y : X) : is_sup (fun z => x ⊓ z ≤ y) (x ⟿ y).
 Proof. apply greatest_is_sup; [apply meet_himp|intros z Hz; apply himpP, Hz]. Qed.
 
 End RelPseudoComplementTheory.

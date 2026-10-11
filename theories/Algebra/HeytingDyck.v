@@ -137,7 +137,8 @@ Qed.
   {| himp := @impD n; himpP := @impDP n |}.
 
 #[export] Instance Dyck_Lattice n : Lattice (Dyck n) :=
-  {| lat_Poset := Dyck_Poset n; lat_Meet := Dyck_Meet n; lat_Join := Dyck_Join n |}.
+  {| lat_JoinSemilattice := {| jsl_Join := Dyck_Join n |};
+     lat_MeetSemilattice := {| msl_Meet := Dyck_Meet n |} |}.
 
 (** [D_n] is a Heyting algebra. *)
 #[export] Instance Dyck_HeytingAlgebra n : HeytingAlgebra (Dyck n) :=

@@ -69,7 +69,8 @@ Proof.
 Qed.
 
 #[export] Instance Dyck_fs_Lattice : Lattice 𝒟_fs :=
-  {| lat_Poset := Dyck_fs_Poset; lat_Meet := Dyck_fs_Meet; lat_Join := Dyck_fs_Join |}.
+  {| lat_JoinSemilattice := {| jsl_Join := Dyck_fs_Join |};
+     lat_MeetSemilattice := {| msl_Meet := Dyck_fs_Meet |} |}.
 
 (** ** No top
 
