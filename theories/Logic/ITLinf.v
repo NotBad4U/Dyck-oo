@@ -2,7 +2,7 @@
 
 From Stdlib Require Import Arith Lia.
 Import Nat.
-From Dyck Require Import ITLn ITLω.
+From Dyck Require Import Interval ITLn ITLω.
 
 Section Syntax.
 
@@ -14,8 +14,6 @@ Inductive form2 : Type :=
 
 End Syntax.
 
-(** Notations as in [ITLn], in a scope of their own. They sit outside
-  [Syntax], since a notation declared in a section ends with it. *)
 Declare Scope form2_scope.
 Delimit Scope form2_scope with form2.
 Bind Scope form2_scope with form2.
@@ -76,18 +74,18 @@ Proof.
   exists I; split; [exact HI|split; [exact Hh|left; exact Hv]].
 Qed.
 
-(** [φ_O = ⋁_k ε_{2k+1}] and [φ_E = ⋁_k ε_{2k+2}], true on the odd and on the
-  even points. Both are in Model 2. *)
-Definition phiO : form2 := ⋁ (fun k => Var2 (2 * k + 1)).
-Definition phiE : form2 := ⋁ (fun k => Var2 (2 * k + 2)).
+(* Formula φ true on odd *)
+Definition phiOdd : form2 := ⋁ (fun k => Var2 (2 * k + 1)).
+(* Formula φ true on even *)
+Definition phiEven : form2 := ⋁ (fun k => Var2 (2 * k + 2)).
 
-Lemma phiO_unbounded : Theta2 phiO.
+Lemma phiOdd_unbounded : Theta2 phiOdd.
 Proof.
   intros N; exists (Itv (2 * N + 1) (2 * N + 1)).
   split; [unfold Intω; cbn; lia|split; [cbn; lia|exists N; reflexivity]].
 Qed.
 
-Lemma phiE_unbounded : Theta2 phiE.
+Lemma phiEven_unbounded : Theta2 phiEven.
 Proof.
   intros N; exists (Itv (2 * N + 2) (2 * N + 2)).
   split; [unfold Intω; cbn; lia|split; [cbn; lia|exists N; reflexivity]].
@@ -95,7 +93,7 @@ Qed.
 
 (** [φ_O ∧ φ_E ≡ ⊥]: no interval is both an odd and an even point. So [∧]
   leaves Model 2, as [O ∧ E = ⊥] leaves [𝒟_∞]. *)
-Theorem and2_not_closed I : ~ (val2 phiO I /\ val2 phiE I).
+Theorem and2_not_closed I : ~ (val2 phiOdd I /\ val2 phiEven I).
 Proof.
   intros [[k Hk] [k' Hk']]; cbn in Hk, Hk'; subst I.
   injection Hk' as E1 E2; lia.
@@ -103,18 +101,15 @@ Qed.
 
 Definition entails2 (φ ψ : form2) : Prop := forall I, Intω I -> val2 φ I -> val2 ψ I.
 
-End Semantics.
-
-(** [φ ⊨_∞ ψ]: on [T_ω], [ψ] is true wherever [φ] is; [∞] as in [𝒟_∞]. *)
 Notation "φ ⊨_∞ ψ" := (entails2 φ ψ) (at level 70, no associativity) : form2_scope.
 
-Section Entailment.
+Section SemanticsProperties.
 
 (** [φ_O] and [φ_E] have no lower bound in Model 2: a formula entailing both
   is true nowhere. *)
 Theorem no_lower_bound2 :
   ~ exists χ : form2,
-      Theta2 χ /\ χ ⊨_∞ phiO /\ χ ⊨_∞ phiE.
+      Theta2 χ /\ χ ⊨_∞ phiOdd /\ χ ⊨_∞ phiEven.
 Proof.
   intros [χ [Hχ [HO HE]]]; destruct (Hχ 0) as [I [HI [_ Hv]]].
   exact (and2_not_closed I (conj (HO I HI Hv) (HE I HI Hv))).
@@ -140,4 +135,6 @@ Proof.
   destruct I as [a b]; cbn in Hk; injection Hk as E1 E2; lia.
 Qed.
 
-End Entailment.
+End SemanticsProperties.
+
+End Semantics.

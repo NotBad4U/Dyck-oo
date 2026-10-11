@@ -2,7 +2,7 @@
 
 From Stdlib Require Import Arith Lia.
 Import Nat.
-From Dyck Require Import ITLn ITLω.
+From Dyck Require Import Interval ITLn ITLω.
 
 Section Syntax.
 
@@ -44,6 +44,10 @@ Fixpoint emb1 (φ : form1) : formω :=
   | φ ∨ ψ => emb1 φ ∨ emb1 ψ
   end.
 
+Definition entails1 (φ ψ : form1) : Prop := forall I, Intω I -> val1 φ I -> val1 ψ I.
+
+Notation "φ ⊨_fs ψ" := (entails1 φ ψ) (at level 70, no associativity) : form1_scope.
+
 Lemma valω_emb1 φ I : valω (emb1 φ) I <-> val1 φ I.
 Proof.
   induction φ as [|i|φ IHφ ψ IHψ|φ IHφ ψ IHψ]; cbn [emb1 valω val1].
@@ -80,27 +84,19 @@ Qed.
 Theorem val1_bounded φ : bounded (val1 φ).
 Proof. exists (bound1 φ); intros I _ H; exact (val1_le_bound φ I H). Qed.
 
-(** [⊤ ∉ ℒ_1]: no formula is true on every interval; it fails on
-  [[t_{N+1}, t_{N+1}]] for [N] its bound. *)
-Theorem no_top1 φ : ~ validω (val1 φ).
+Definition validity1 (φ : form1) : Prop := forall I, Intω I -> val1 φ I.
+
+Section SemanticsProperties.
+
+(** No Top *)
+Theorem no_top1 φ : ~ validity1 φ.
 Proof.
   intros H.
   pose proof (H (Itv (S (bound1 φ)) (S (bound1 φ))) ltac:(unfold Intω; cbn; lia)) as Hv.
   apply val1_le_bound in Hv; cbn [hi] in Hv; lia.
 Qed.
 
-Definition entails1 (φ ψ : form1) : Prop := forall I, Intω I -> val1 φ I -> val1 ψ I.
-
-End Semantics.
-
-(** [φ ⊨_fs ψ]: on [T_ω], [ψ] is true wherever [φ] is; [fs] as in [𝒟_fs]. *)
-Notation "φ ⊨_fs ψ" := (entails1 φ ψ) (at level 70, no associativity) : form1_scope.
-
-Section Entailment.
-
-(** No implication: for any candidate [imp], [⊥ ∧ χ ⊨_fs ⊥] for every [χ], so
-  every [χ] would entail [imp ⊥ ⊥]; with [χ = ε_i] this puts [imp ⊥ ⊥] on
-  every point, beyond its bound. *)
+(** No implication *)
 Theorem no_imp1 :
   ~ exists imp : form1 -> form1 -> form1,
       forall φ ψ χ, φ ∧ χ ⊨_fs ψ <-> χ ⊨_fs imp φ ψ.
@@ -114,4 +110,6 @@ Proof.
   apply val1_le_bound in Hv; cbn [hi] in Hv; lia.
 Qed.
 
-End Entailment.
+End SemanticsProperties.
+
+End Semantics.

@@ -1,12 +1,12 @@
 (** * The logic [ℒ_ω] of [𝒟_ω] ("Unbounded Interval Temporal Logics")
 
-  The interval semantics of [ITLn] on the unbounded time line [T_ω = {t_1, t_2, … t_ω}] and
-  the intervals are the [[t_i, t_j]] with [1 ≤ i ≤ j].
+  The interval semantics of [ITLn] on the unbounded time line [T_ω = {t_1, t_2, …}]:
+  the intervals are the [[t_i, t_j]] with [1 ≤ i ≤ j], all finite; there is no last point.
 *)
 
 From Stdlib Require Import Arith Lia.
 Import Nat.
-From Dyck Require Import ITLn.
+From Dyck Require Import Interval ITLn.
 
 Section Syntax.
 
@@ -70,8 +70,8 @@ Proof.
   - intros i; exact (IH i I J (HI i) HJ).
 Qed.
 
-(** [Intω I]: [I] is an interval of [T_ω]. *)
-Definition Intω (I : interval) : Prop := 1 <= lo I /\ lo I <= hi I.
+(** [φ] is valid on [T_ω], i.e. true on every interval. *)
+Definition validityω (φ : formω) : Prop := forall I, Intω I -> valω φ I.
 
 Definition entailsω (φ ψ : formω) : Prop := forall I, Intω I -> valω φ I -> valω ψ I.
 
@@ -100,6 +100,6 @@ Proof.
   split.
   - intros H I HI Hu i; exact (H i I HI Hu).
   - intros H i I HI Hu; exact (H I HI Hu i).
-Qed.
+Qed. 
 
 End Semantics.

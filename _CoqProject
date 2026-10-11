@@ -1,6 +1,7 @@
 -R theories Dyck
 
 theories/Lattice.v
+theories/Interval.v
 theories/Algebra/Dyck.v
 theories/Algebra/Words.v
 theories/Algebra/HeytingDyck.v
