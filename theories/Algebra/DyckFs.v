@@ -68,6 +68,9 @@ Proof.
   rewrite h_meetω, !h_joinω, !h_meetω; lia.
 Qed.
 
+#[export] Instance Dyck_fs_Lattice : Lattice 𝒟_fs :=
+  {| lat_Poset := Dyck_fs_Poset; lat_Meet := Dyck_fs_Meet; lat_Join := Dyck_fs_Join |}.
+
 (** ** No top
 
   The atom [π_{N+1} = (ud)^N uudd (ud)^ω] has finite support and is at

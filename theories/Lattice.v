@@ -61,6 +61,27 @@ Notation "¬ x" := (pneg x) (at level 35, right associativity) : lattice_scope.
   {M : Meet X} {R : RelPseudoComplement X} {B : Bot X} : PseudoComplement X :=
   {| pneg x := x ↛ ⊥; pnegP x z := himpP x ⊥ z |}.
 
+(** ** Bundles
+
+  The classes above stay separate, so that a carrier states exactly the
+  structure it has: a model may lack a top, a bottom or a meet. When the
+  pieces are all there, these bundles name the combination; their fields
+  are instances, so a bundle provides each piece. *)
+
+Class Lattice X := {
+  lat_Poset :: Poset X;
+  lat_Meet :: Meet X;
+  lat_Join :: Join X
+}.
+
+Class HeytingAlgebra X := {
+  ha_Lattice :: Lattice X;
+  ha_Bot :: Bot X;
+  ha_Top :: Top X;
+  ha_Distributive :: Distributive X;
+  ha_RelPseudoComplement :: RelPseudoComplement X
+}.
+
 Section PosetTheory.
 
 Context {X : Type} {P : Poset X}.
@@ -73,6 +94,18 @@ Proof. intros xy yz; transitivity y; assumption. Qed.
 
 Lemma le_anti {x y : X} : x ≤ y -> y ≤ x -> x ≡ y.
 Proof. intros xy yx; apply po_eqE; split; assumption. Qed.
+
+(** [is_sup S s]: [s] is the join [⋁ S] of the set [S], its least upper
+  bound. It is unique up to [≡]. *)
+Definition is_sup (S : X -> Prop) (s : X) : Prop :=
+  (forall x, S x -> x ≤ s) /\ (forall u, (forall x, S x -> x ≤ u) -> s ≤ u).
+
+Lemma is_sup_unique S s t : is_sup S s -> is_sup S t -> s ≡ t.
+Proof. intros [Us Ls] [Ut Lt]; apply le_anti; [apply Ls, Ut|apply Lt, Us]. Qed.
+
+(** A greatest element of a set is its join. *)
+Lemma greatest_is_sup (S : X -> Prop) s : S s -> (forall x, S x -> x ≤ s) -> is_sup S s.
+Proof. intros Hs Hub; split; [exact Hub|intros u Hu; exact (Hu s Hs)]. Qed.
 
 End PosetTheory.
 
@@ -217,6 +250,10 @@ Context {X : Type} {P : Poset X} {M : Meet X} {R : RelPseudoComplement X}.
 (** Modus ponens. *)
 Lemma meet_himp (x y : X) : x ⊓ (x ↛ y) ≤ y.
 Proof. apply himpP, lexx. Qed.
+
+(** [x ↛ y] is the join of [{ z | x ⊓ z ≤ y }], being its greatest element. *)
+Lemma himp_is_sup (x y : X) : is_sup (fun z => x ⊓ z ≤ y) (x ↛ y).
+Proof. apply greatest_is_sup; [apply meet_himp|intros z Hz; apply himpP, Hz]. Qed.
 
 End RelPseudoComplementTheory.
 

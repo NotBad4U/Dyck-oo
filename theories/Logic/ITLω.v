@@ -17,7 +17,6 @@ Inductive formω : Type :=
 | Andω (φ ψ : formω)
 | Orω (φ ψ : formω)
 | Pimpω (φ ψ : formω)            (* [φ ⇝ ψ] *)
-| Pnegω (φ : formω)              (* [∼ φ] *)
 | Supω (f : nat -> formω)        (* [⋁_i f i] *)
 | Infω (f : nat -> formω).       (* [⋀_i f i] *)
 
@@ -34,7 +33,8 @@ Notation "⊤" := Topω : formω_scope.
 Notation "φ ∨ ψ" := (Orω φ ψ) (at level 50, left associativity) : formω_scope.
 Notation "φ ∧ ψ" := (Andω φ ψ) (at level 40, left associativity) : formω_scope.
 Notation "φ ⇝ ψ" := (Pimpω φ ψ) (at level 60, right associativity) : formω_scope.
-Notation "∼ φ" := (Pnegω φ) (at level 35, right associativity) : formω_scope.
+(** [∼ φ] is [φ ⇝ ⊥], as [¬P = P → ⊥] in the frame: no constructor. *)
+Notation "∼ φ" := (φ ⇝ ⊥) (at level 35, right associativity) : formω_scope.
 Notation "⋁ f" := (Supω f) (at level 35, right associativity) : formω_scope.
 Notation "⋀ f" := (Infω f) (at level 35, right associativity) : formω_scope.
 
@@ -48,7 +48,6 @@ Fixpoint valω (φ : formω) (I : interval) : Prop :=
   | φ ∧ ψ => valω φ I /\ valω ψ I
   | φ ∨ ψ => valω φ I \/ valω ψ I
   | φ ⇝ ψ => forall J, J ⊆ I -> valω φ J -> valω ψ J
-  | ∼ φ => forall J, J ⊆ I -> ~ valω φ J
   | ⋁ f => exists i, valω (f i) I
   | ⋀ f => forall i, valω (f i) I
   end.
@@ -57,7 +56,7 @@ Definition persistent (φ : formω) : Prop := forall I J, valω φ I -> J ⊆ I 
 
 Theorem valω_persistent φ : persistent φ.
 Proof.
-  induction φ as [| |i|φ IHφ ψ IHψ|φ IHφ ψ IHψ|φ IHφ ψ IHψ|φ IHφ|f IH|f IH];
+  induction φ as [| |i|φ IHφ ψ IHψ|φ IHφ ψ IHψ|φ IHφ ψ IHψ|f IH|f IH];
     intros I J HI HJ; cbn [valω] in *.
   - exact HI.
   - exact HI.
@@ -65,13 +64,12 @@ Proof.
   - destruct HI as [H1 H2]; split; [exact (IHφ I J H1 HJ)|exact (IHψ I J H2 HJ)].
   - destruct HI as [H|H]; [left; exact (IHφ I J H HJ)|right; exact (IHψ I J H HJ)].
   - intros K HK; exact (HI K (sub_trans K J I HK HJ)).
-  - intros K HK; exact (HI K (sub_trans K J I HK HJ)).
   - destruct HI as [i H]; exists i; exact (IH i I J H HJ).
   - intros i; exact (IH i I J (HI i) HJ).
 Qed.
 
 (** [φ] is valid on [T_ω], i.e. true on every interval. *)
-Definition validityω (φ : formω) : Prop := forall I, Intω I -> valω φ I.
+Definition validω (φ : formω) : Prop := forall I, Intω I -> valω φ I.
 
 Definition entailsω (φ ψ : formω) : Prop := forall I, Intω I -> valω φ I -> valω ψ I.
 
@@ -100,6 +98,30 @@ Proof.
   split.
   - intros H I HI Hu i; exact (H i I HI Hu).
   - intros H i I HI Hu; exact (H I HI Hu i).
-Qed. 
+Qed.
+
+(** *** [∼], Heyting negation *)
+Lemma pnegω_pnegω_intro φ I : valω φ I -> valω (∼ ∼ φ) I.
+Proof.
+  intros Hv J HJ H; exact (H J (sub_self J I HJ) (valω_persistent φ I J Hv HJ)).
+Qed.
+
+Lemma pnegω_pnegω_pnegω φ I : valω (∼ φ) I <-> valω (∼ ∼ ∼ φ) I.
+Proof.
+  split.
+  - intros H J HJ H2.
+    exact (H2 J (sub_self J I HJ) (fun K HK Hφ => H K (sub_trans K J I HK HJ) Hφ)).
+  - intros H J HJ Hφ; apply (H J HJ); intros K HK H1.
+    exact (H1 K (sub_self K J HK) (valω_persistent φ J K Hφ HK)).
+Qed.
+
+(** *** [□] and [◇] Ferrari's modalities, read on truth sets ([interior], [closure] of [Interval]). *)
+Lemma boxω_id φ I : Intω I -> (interior (valω φ) I <-> valω φ I).
+Proof.
+  intros HI; apply interior_downset_id; [exact (valω_persistent φ)|unfold Intω in HI; lia].
+Qed.
+
+Lemma diaω_not_persistent : ~ ↓ closure (valω (Varω 1)).
+Proof. exact closure_not_downset. Qed.
 
 End Semantics.

@@ -84,12 +84,58 @@ Qed.
 Theorem val1_bounded φ : bounded (val1 φ).
 Proof. exists (bound1 φ); intros I _ H; exact (val1_le_bound φ I H). Qed.
 
-Definition validity1 (φ : form1) : Prop := forall I, Intω I -> val1 φ I.
+Definition valid1 (φ : form1) : Prop := forall I, Intω I -> val1 φ I.
+
+(** *** [∼], [⇝], [□], [◇] on Model 1
+
+  Read in [ℒ_ω], [∼ φ] and [φ ⇝ ψ] hold on every interval beyond the bound
+  of [φ], where [φ] is false: their truth sets are unbounded, so no formula
+  of [ℒ_1] is equivalent to them ([∼ ⊥ ≡ ⊤] and [⊥ ⇝ ⊥ ≡ ⊤] being the
+  extreme cases). [□] is the identity on [ℒ_1]; [◇] breaks persistence. *)
+Lemma pneg1_unbounded φ : unbounded (valω (∼ emb1 φ)).
+Proof.
+  intros N; exists (Itv (S (N + bound1 φ)) (S (N + bound1 φ))).
+  split; [unfold Intω; cbn; lia|split; [cbn; lia|]].
+  intros J HJ Hv; apply valω_emb1, val1_le_bound in Hv.
+  unfold sub in HJ; cbn in HJ; lia.
+Qed.
+
+Lemma pimp1_unbounded φ ψ : unbounded (valω (emb1 φ ⇝ emb1 ψ)).
+Proof.
+  intros N; exists (Itv (S (N + bound1 φ)) (S (N + bound1 φ))).
+  split; [unfold Intω; cbn; lia|split; [cbn; lia|]].
+  intros J HJ Hv; apply valω_emb1, val1_le_bound in Hv.
+  unfold sub in HJ; cbn in HJ; exfalso; lia.
+Qed.
+
+Theorem pneg_not_closed1 φ :
+  ~ exists χ : form1, forall I, Intω I -> (val1 χ I <-> valω (∼ emb1 φ) I).
+Proof.
+  intros [χ Hχ]; apply (unbounded_not_bounded _ (pneg1_unbounded φ)).
+  destruct (val1_bounded χ) as [N HN]; exists N.
+  intros I HI Hv; exact (HN I HI (proj2 (Hχ I HI) Hv)).
+Qed.
+
+Theorem pimp_not_closed1 φ ψ :
+  ~ exists χ : form1, forall I, Intω I -> (val1 χ I <-> valω (emb1 φ ⇝ emb1 ψ) I).
+Proof.
+  intros [χ Hχ]; apply (unbounded_not_bounded _ (pimp1_unbounded φ ψ)).
+  destruct (val1_bounded χ) as [N HN]; exists N.
+  intros I HI Hv; exact (HN I HI (proj2 (Hχ I HI) Hv)).
+Qed.
+
+Lemma box1_id φ I : Intω I -> (interior (val1 φ) I <-> val1 φ I).
+Proof.
+  intros HI; apply interior_downset_id; [exact (val1_persistent φ)|unfold Intω in HI; lia].
+Qed.
+
+Lemma dia1_not_persistent : ~ ↓ closure (val1 (Var1 1)).
+Proof. exact closure_not_downset. Qed.
 
 Section SemanticsProperties.
 
 (** No Top *)
-Theorem no_top1 φ : ~ validity1 φ.
+Theorem no_top1 φ : ~ valid1 φ.
 Proof.
   intros H.
   pose proof (H (Itv (S (bound1 φ)) (S (bound1 φ))) ltac:(unfold Intω; cbn; lia)) as Hv.

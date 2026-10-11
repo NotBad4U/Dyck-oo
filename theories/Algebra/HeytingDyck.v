@@ -99,11 +99,11 @@ Proof. intros P Q R; apply le_anti; [apply meetD_joinD|apply meetU_ge]. Qed.
   relative pseudo-complement and the negation is the pseudo-complement:
 
 <<
-    P ↛ Q = ⋁ { R | P ⊓ R ≤ Q }          ¬ P = P ↛ ⊥
+    P ⟿ Q = ⋁ { R | P ⊓ R ≤ Q }          ¬ P = P ⟿ ⊥
 >>
 
   [D_n] is finite, so the join is a finite one, taken over the enumeration
-  [enumD n]. [P ↛ Q] is the largest [R] with [P ⊓ R ≤ Q] ([impDP]), which
+  [enumD n]. [P ⟿ Q] is the largest [R] with [P ⊓ R ≤ Q] ([impDP]), which
   makes [D_n] a Heyting algebra. *)
 
 Definition impD {n} (P Q : Dyck n) : Dyck n :=
@@ -135,6 +135,15 @@ Qed.
 
 #[export] Instance Dyck_RelPseudoComplement n : RelPseudoComplement (Dyck n) :=
   {| himp := @impD n; himpP := @impDP n |}.
+
+#[export] Instance Dyck_Lattice n : Lattice (Dyck n) :=
+  {| lat_Poset := Dyck_Poset n; lat_Meet := Dyck_Meet n; lat_Join := Dyck_Join n |}.
+
+(** [D_n] is a Heyting algebra. *)
+#[export] Instance Dyck_HeytingAlgebra n : HeytingAlgebra (Dyck n) :=
+  {| ha_Lattice := Dyck_Lattice n; ha_Bot := Dyck_Bot n; ha_Top := Dyck_Top n;
+     ha_Distributive := Dyck_Distributive n;
+     ha_RelPseudoComplement := Dyck_RelPseudoComplement n |}.
 
 Section ExampleD4.
 

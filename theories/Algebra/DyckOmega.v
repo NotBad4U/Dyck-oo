@@ -90,6 +90,9 @@ Proof.
   rewrite h_meetω, !h_joinω, !h_meetω; lia.
 Qed.
 
+#[export] Instance Dyckω_Lattice : Lattice Dyckω :=
+  {| lat_Poset := Dyckω_Poset; lat_Meet := Dyckω_Meet; lat_Join := Dyckω_Join |}.
+
 (** ** Support of a meet and of a join
 
   Since [⊥ ≤ P], [n ∈ supp(P)] means [h_P(n) > h_⊥(n)]; hence

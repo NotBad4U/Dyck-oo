@@ -883,6 +883,15 @@ $
   not exists top quad => quad not exists " global Heyting implication".
 $
 
+Nor does $cal(D)_1$ keep the implication $arrow.r$ and negation $not$ of
+$cal(D)_omega$ (Completion below): for $P, Q in cal(D)_1$, every $J_I$ with $I$
+beyond $supp(P)$ has $J_I and P = bot <= Q$, hence $J_I <= P arrow.r Q$; so
+
+$
+  P, Q in cal(D)_1 quad => quad abs(supp(P arrow.r Q)) = abs(supp(not P)) = infinity,
+  wide not bot = top in.not cal(D)_1.
+$
+
 $
   cal(L)_1 = \{ bot, and, or \}.
 $
@@ -924,13 +933,26 @@ $
 $
 
 $
-  cal(D)_2 = "join-semilattice with top", wide cal(L)_2 = \{ top, or \}.
+  cal(D)_2 = "join-semilattice with top", wide cal(L)_2 = \{ top, or, arrow.r \}.
 $
 
 $
   not exists bot, wide not exists " global " and, wide
-  not exists " global " arrow.r, wide not exists " global negation".
+  not exists " global negation": quad not top = bot in.not cal(D)_2.
 $
+
+The implication of $cal(D)_omega$, however, restricts to $cal(D)_2$: $Q <= P
+arrow.r Q$, and $cal(D)_2$ is an up-set of $cal(D)_omega$ since $supp$ is
+monotone, so
+
+$
+  P, Q in cal(D)_2 quad => quad P arrow.r Q in cal(D)_2.
+$
+
+It is not the residual of the partial meet of $cal(D)_2$: $O arrow.r E = not O =
+E$, while no $R in cal(D)_2$ has $O and R in cal(D)_2$ below $E$, as $O and R <=
+O and E = bot$. The adjunction $P and R <= Q <==> R <= P arrow.r Q$ is
+available in $cal(D)_omega$ only.
 
 
 == Completion
@@ -975,11 +997,6 @@ $
   cal(L)_omega = \{ bot, top, and, or, arrow.r, not \}
   + \{ sup_(i in I), inf_(i in I) \}.
 $
-
-$
-  "Idl"(cal(D)_1) tilde.equiv cal(D)_omega.
-$
-
 
 == Final overview
 

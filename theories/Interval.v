@@ -49,6 +49,50 @@ Proof.
   intros H [N HN]; destruct (H (S N)) as [I [HI [Hh Hv]]]; specialize (HN I HI Hv); lia.
 Qed.
 
+(** ** Down-sets of intervals topology aka Alexandrov topology on intervals *)
+
+Definition downset (v : interval -> Prop) : Prop := forall I J, v I -> J ⊆ I -> v J.
+
+Notation "↓ v" := (downset v) (at level 35, right associativity) : interval_scope.
+
+Definition interior (v : interval -> Prop) (I : interval) : Prop := forall J, J ⊆ I -> v J.
+
+Definition closure (v : interval -> Prop) (I : interval) : Prop := exists J, J ⊆ I /\ v J.
+
+Lemma interior_downset v : ↓ interior v.
+Proof. intros I J H HJ K HK; exact (H K (sub_trans K J I HK HJ)). Qed.
+
+(** A down-set is its own interior [I ⊆ I]. *)
+Lemma interior_downset_id v I : ↓ v -> lo I <= hi I -> (interior v I <-> v I).
+Proof.
+  intros Hv HI; split.
+  - intros H; apply H; unfold sub; lia.
+  - intros H J HJ; exact (Hv I J H HJ).
+Qed.
+
+Lemma interior_idem v I : interior (interior v) I <-> interior v I.
+Proof.
+  split.
+  - intros H J HJ; exact (H J HJ J (sub_self J I HJ)).
+  - intros H J HJ K HK; exact (H K (sub_trans K J I HK HJ)).
+Qed.
+
+Lemma closure_idem v I : closure (closure v) I <-> closure v I.
+Proof.
+  split.
+  - intros [J [HJ [K [HK H]]]]; exists K; split; [exact (sub_trans K J I HK HJ)|exact H].
+  - intros [J [HJ H]]; exists I; split; [unfold sub in *; lia|exists J; split; assumption].
+Qed.
+
+Lemma closure_not_downset : ~ ↓ closure (fun I => I = Itv 1 1).
+Proof.
+  intros H.
+  specialize (H (Itv 1 2) (Itv 2 2)
+                ltac:(exists (Itv 1 1); split; [unfold sub; cbn; lia|reflexivity])
+                ltac:(unfold sub; cbn; lia)).
+  destruct H as [J [HJ E]]; subst J; unfold sub in HJ; cbn in HJ; lia.
+Qed.
+
 (* The list of subintervals of [I]. *)
 Definition subs (I : interval) : list interval :=
   flat_map (fun a => map (Itv a) (seq a (S (hi I) - a)))

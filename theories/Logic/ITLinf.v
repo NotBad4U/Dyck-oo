@@ -10,7 +10,8 @@ Inductive form2 : Type :=
 | Top2
 | Var2 (i : nat)
 | Or2 (φ ψ : form2)
-| Sup2 (f : nat -> form2).
+| Sup2 (f : nat -> form2)
+| Pimp2 (φ ψ : form2).           (* [φ ⇝ ψ], the implication of [𝒟_ω] *)
 
 End Syntax.
 
@@ -22,6 +23,7 @@ Open Scope form2_scope.
 Notation "⊤" := Top2 : form2_scope.
 Notation "φ ∨ ψ" := (Or2 φ ψ) (at level 50, left associativity) : form2_scope.
 Notation "⋁ f" := (Sup2 f) (at level 35, right associativity) : form2_scope.
+Notation "φ ⇝ ψ" := (Pimp2 φ ψ) (at level 60, right associativity) : form2_scope.
 
 Section Semantics.
 
@@ -31,6 +33,7 @@ Fixpoint val2 (φ : form2) (I : interval) : Prop :=
   | Var2 i => I = Itv i i
   | φ ∨ ψ => val2 φ I \/ val2 ψ I
   | ⋁ f => exists i, val2 (f i) I
+  | φ ⇝ ψ => forall J, J ⊆ I -> val2 φ J -> val2 ψ J
   end.
 
 (** [ℒ_2 ⊆ ℒ_ω], with the same truth sets. *)
@@ -40,15 +43,17 @@ Fixpoint emb2 (φ : form2) : formω :=
   | Var2 i => Varω i
   | φ ∨ ψ => emb2 φ ∨ emb2 ψ
   | ⋁ f => ⋁ (fun i => emb2 (f i))
+  | φ ⇝ ψ => emb2 φ ⇝ emb2 ψ
   end.
 
 Lemma valω_emb2 φ : forall I, valω (emb2 φ) I <-> val2 φ I.
 Proof.
-  induction φ as [|i|φ IHφ ψ IHψ|f IH]; intros I; cbn [emb2 valω val2].
+  induction φ as [|i|φ IHφ ψ IHψ|f IH|φ IHφ ψ IHψ]; intros I; cbn [emb2 valω val2].
   - reflexivity.
   - reflexivity.
   - split; intros [H|H]; [left; apply IHφ|right; apply IHψ|left; apply IHφ|right; apply IHψ]; assumption.
   - split; intros [i H]; exists i; apply IH; exact H.
+  - split; intros H J HJ Hφ; apply IHψ; apply (H J HJ); apply IHφ; exact Hφ.
 Qed.
 
 Lemma val2_persistent φ I J : val2 φ I -> J ⊆ I -> val2 φ J.
@@ -56,6 +61,15 @@ Proof.
   intros HI HJ; apply valω_emb2; apply valω_emb2 in HI.
   exact (valω_persistent (emb2 φ) I J HI HJ).
 Qed.
+
+(** [□] is the identity on [ℒ_2]; [◇] breaks persistence. *)
+Lemma box2_id φ I : Intω I -> (interior (val2 φ) I <-> val2 φ I).
+Proof.
+  intros HI; apply interior_downset_id; [exact (val2_persistent φ)|unfold Intω in HI; lia].
+Qed.
+
+Lemma dia2_not_persistent : ~ ↓ closure (val2 (Var2 1)).
+Proof. exact closure_not_downset. Qed.
 
 (** The formulas of Model 2: those with unbounded truth set. *)
 Definition Theta2 (φ : form2) : Prop := unbounded (val2 φ).
@@ -72,6 +86,26 @@ Theorem or2_unbounded φ ψ : Theta2 φ -> Theta2 (φ ∨ ψ).
 Proof.
   intros H N; destruct (H N) as [I [HI [Hh Hv]]].
   exists I; split; [exact HI|split; [exact Hh|left; exact Hv]].
+Qed.
+
+Theorem pimp2_unbounded φ ψ : Theta2 ψ -> Theta2 (φ ⇝ ψ).
+Proof.
+  intros H N; destruct (H N) as [I [HI [Hh Hv]]].
+  exists I; split; [exact HI|split; [exact Hh|]].
+  intros J HJ _; exact (val2_persistent ψ I J Hv HJ).
+Qed.
+
+Lemma pimp2_adj φ ψ χ :
+  entailsω (emb2 φ ∧ emb2 χ) (emb2 ψ) <-> entailsω (emb2 χ) (emb2 (φ ⇝ ψ)).
+Proof. exact (pimpω_adj (emb2 φ) (emb2 ψ) (emb2 χ)). Qed.
+
+(** [∼] does not keep Model 2: [∼ ⊤ ≡ ⊥] holds nowhere, while [⊤ ∈ ℒ_2]. In
+  [𝒟_∞], [¬⊤ = ⊥ ∉ 𝒟_∞]: [∼ = (· ⇝ ⊥)] needs the [⊥] that [ℒ_2] lacks. *)
+Theorem pneg_not_closed2 :
+  ~ exists χ : form2, Theta2 χ /\ forall I, Intω I -> (val2 χ I <-> valω (∼ emb2 ⊤) I).
+Proof.
+  intros [χ [Hχ Hequiv]]; destruct (Hχ 0) as [I [HI [_ Hv]]].
+  exact (proj1 (Hequiv I HI) Hv I ltac:(unfold Intω, sub in *; lia) Logic.I).
 Qed.
 
 (* Formula φ true on odd *)
